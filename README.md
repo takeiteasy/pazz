@@ -1,4 +1,4 @@
-# PassMan
+# passe
 
 ## License
 ```
