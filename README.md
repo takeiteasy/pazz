@@ -1,5 +1,14 @@
 # passe
 
+## Dependencies
+
+- [esr/microjson](https://gitlab.com/esr/microjson/) (BSD-2-clause)
+    - mjson.h
+- [tsoding/jim](https://github.com/tsoding/jim) (MIT)
+    - jim.h
+- [win32/getopt.h](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
+    - getopt.h
+
 ## License
 ```
 The MIT License (MIT)
