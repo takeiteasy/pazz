@@ -774,10 +774,6 @@ static const char pw_template_char(const char c, const unsigned char seed) {
     return ch ? ch[seed % strlen(ch)] : '\0';
 }
 
-#if defined(__EMSCRIPTEN__)
-#include <emscripten.h>
-EMSCRIPTEN_KEEPALIVE
-#endif
 const char *SpectreGenerate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, SpectreTemplate type) {
     size_t pw_salt_sz = 0;
     unsigned char *pw_salt = NULL;
@@ -807,5 +803,6 @@ const char *SpectreGenerate(const char *name, const char *pass, const char *site
     char* const site_pass = malloc(sizeof(char) * template_sz + 1);
     for (int i = 0; i < template_sz; ++i)
       site_pass[i] = pw_template_char(template[i], site_key[i + 1]);
+    site_pass[template_sz] = '\0';
     return site_pass;
 }

@@ -30,14 +30,14 @@ extern "C" {
 #endif
 
 typedef enum {
-  SpectreMaximum,
-  SpectreLong,
-  SpectreMedium,
-  SpectreShort,
-  SpectreBasic,
-  SpectrePin,
-  SpectreName,
-  SpectrePhrase
+    SpectreMaximum,
+    SpectreLong,
+    SpectreMedium,
+    SpectreShort,
+    SpectreBasic,
+    SpectrePin,
+    SpectreName,
+    SpectrePhrase
 } SpectreTemplate;
 
 const char *SpectreGenerate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, SpectreTemplate type);
