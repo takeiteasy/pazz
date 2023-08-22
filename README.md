@@ -6,7 +6,7 @@
     - mjson.h
 - [tsoding/jim](https://github.com/tsoding/jim) (MIT)
     - jim.h
-- [win32/getopt.h](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
+- [skandhurkat/Getopt-for-Visual-Studio](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
     - getopt.h
 
 ## License
