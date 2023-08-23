@@ -8,8 +8,8 @@ Cryptographic password generation + manager based off [spectre.app](https://spec
     - src/spectre.c -- scrypt + sha256 implementation
 - [skandhurkat/Getopt-for-Visual-Studio](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
     - src/getopt_win32.h
-- [piotrmurach/tty-prompt](https://github.com/piotrmurach/tty-prompt)
-    - passe-cli.rb gem
+- [piotrmurach/tty-prompt](https://github.com/piotrmurach/tty-prompt) [MIT]
+    - src/passe-cli.rb gem
 
 ## License
 ```
