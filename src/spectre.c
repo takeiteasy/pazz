@@ -27,6 +27,7 @@
 
 #include "spectre.h"
 #include <sys/types.h>
+
 #ifndef _WIN32
 #include <sys/mman.h>
 #endif
@@ -805,4 +806,199 @@ const char *SpectreGenerate(const char *name, const char *pass, const char *site
       site_pass[i] = pw_template_char(template[i], site_key[i + 1]);
     site_pass[template_sz] = '\0';
     return site_pass;
+}
+
+#include <stdio.h>
+#include <ctype.h>
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
+#define __PLATFORM_WINDOWS
+#include "getopt_win32.h"
+#include <conio.h>
+#else
+#include <getopt.h>
+#include <termios.h>
+#include <unistd.h>
+#endif
+
+#define AUTHENTICATION "com.lyndir.masterpassword"
+#define IDENTIFICATION "com.lyndir.masterpassword.login"
+#define RECOVERY "com.lyndir.masterpassword.answer"
+
+static struct option long_options[] = {
+    {"name", required_argument, NULL, 'n'},
+    {"password", required_argument, NULL, 'p'},
+    {"site", required_argument, NULL, 's'},
+    {"counter", required_argument, NULL, 'c'},
+    {"scope", required_argument, NULL, 'S'},
+    {"template", required_argument, NULL, 't'},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, 0, NULL, 0}
+};
+
+static void usage(void) {
+    puts("usage: spectre --name username --site www.example.com [arg value...]");
+    puts("");
+    puts("  Arguments:");
+    puts("    * --name/-n     -- Name of new user [required]");
+    puts("    * --password/-p -- Master password of user [optional]");
+    puts("                       If this is not set, you will be required");
+    puts("                       to enter it through a masked prompt");
+    puts("    * --site/-s     -- Site password identifier [required]");
+    puts("    * --counter/-c  -- Modify to generate a different password");
+    puts("                       for a site identifier [optional]");
+    puts("    * --scope/-S    -- Scecify password purpose [optional]");
+    puts("    * --template/-t -- Password output format [optional]");
+    puts("");
+    puts("  Scopes:");
+    puts("    * authentication (default)");
+    puts("    * identification");
+    puts("    * recovery");
+    puts("");
+    puts("  Templates:");
+    puts("    * max (20 characters) (default)");
+    puts("    * long (14 characters)");
+    puts("    * medium (8 characters)");
+    puts("    * short (4 characters)");
+    puts("    * basic (8 characters, A-Z + 0-9)");
+    puts("    * pin (4 characters, 0-9)");
+    puts("    * name (9 characters)");
+    puts("    * phrase (20 characters with spaces)");
+}
+
+static const char* lowercase(const char *str) {
+    static char lowercase[256];
+    memset(&lowercase, 0, 256 * sizeof(char));
+    for (size_t i = 0; i < strlen(str); i++)
+        lowercase[i] = isalpha(str[i]) ? tolower(str[i]) : str[i];
+    return lowercase;
+}
+
+#define ABORT(MSG, ...)                      \
+    do {                                     \
+        fprintf(stderr, (MSG), __VA_ARGS__); \
+        usage();                             \
+        return 1;                            \
+    } while (0)
+
+#define UNLESS(CND, MSG, ...)          \
+    do {                               \
+        if (!(CND)) {                  \
+            ABORT((MSG), __VA_ARGS__); \
+        }                              \
+    } while(0)
+
+#if !defined(__PLATFORM_WINDOWS)
+static void SetEcho(int fd, int enabled) {
+    struct termios old = {0};
+    tcgetattr(fd, &old);
+    if (!enabled)
+        old.c_lflag &= ~ECHO;
+    else
+        old.c_lflag |= ECHO;
+    tcsetattr(fd, TCSANOW, &old);
+}
+#endif
+
+int main(int argc, char *argv[]) {
+    int opt;
+    extern char* optarg;
+    extern int optopt;
+    int counter = 0;
+    const char *name = NULL,
+               *password = NULL,
+               *site = NULL,
+               *scope = NULL,
+               *template = NULL;
+    while ((opt = getopt_long(argc, argv, ":h", long_options, NULL)) != -1) {
+        switch(opt) {
+            case 'n':
+                name = optarg;
+                break;
+            case 'p':
+                password = optarg;
+                break;
+            case 's':
+                site = optarg;
+                break;
+            case 'c':
+                counter = atoi(optarg);
+                break;
+            case 'S':
+                scope = optarg;
+                break;
+            case 't':
+                template = optarg;
+                break;
+            case 'h':
+                usage();
+                return 0;
+            case ':':
+                ABORT("ERROR: \"-%c\" requires an value!\n", optopt);
+            case '?':
+                ABORT("ERROR: Unknown argument \"-%c\"\n", optopt);
+        }
+    }
+    
+    UNLESS(name, "ERROR: %s\n", "No user name argument supplied");
+    UNLESS(site, "ERROR: %s\n", "No site argument supplied");
+    
+    if (!scope)
+        scope = AUTHENTICATION;
+    else {
+        const char *lower = lowercase(scope);
+        if (!strncmp("authentication", lower, 14))
+            scope = AUTHENTICATION;
+        else if (!strncmp("identification", lower, 14))
+            scope = IDENTIFICATION;
+        else if (!strncmp("recovery", lower, 8))
+            scope = RECOVERY;
+        else
+            ABORT("ERROR: Unknown scope \"%s\"", scope);
+    }
+    
+    SpectreTemplate spectreTemplate = SpectreMaximum;
+    if (template) {
+        const char *lower = lowercase(template);
+        if (!strncmp("max", lower, 3) || !strncmp("maximum", lower, 7))
+            spectreTemplate = SpectreMaximum;
+        else if (!strncmp("long", lower, 4))
+            spectreTemplate = SpectreLong;
+        else if (!strncmp("medium", lower, 6))
+            spectreTemplate = SpectreMedium;
+        else if (!strncmp("short", lower, 5))
+            spectreTemplate = SpectreShort;
+        else if (!strncmp("pin", lower, 3))
+            spectreTemplate = SpectrePin;
+        else if (!strncmp("name", lower, 4))
+            spectreTemplate = SpectreName;
+        else if (!strncmp("phrase", lower, 6))
+            spectreTemplate = SpectrePhrase;
+        else
+            ABORT("ERROR: Unknown template \"%s\"", template);
+    }
+    
+    char input[256];
+    if (!password) {
+#if defined(__PLATFORM_WINDOWS)
+        int i = 0;
+        for (;;) {
+            char ch = _getch();
+            if (ch == '\r') {
+                input[i] = '\0';
+                break;
+            } else
+                input[i++] = ch;
+        }
+#else
+        SetEcho(STDIN_FILENO, 0);
+        fgets(input, sizeof(input), stdin);
+        SetEcho(STDIN_FILENO, 1);
+        input[strcspn(input, "\n")] = 0;
+#endif
+        password = input;
+    }
+    
+    printf("%s", SpectreGenerate(name, password, site, counter, scope, spectreTemplate));
+    return 0;
 }

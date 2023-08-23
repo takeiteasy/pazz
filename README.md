@@ -1,13 +1,13 @@
 # passe
 
+Cryptographic password generation + manager based off [spectre.app](https://spectre.app/spectre-algorithm.pdf) (formerly "Master Password") **WIP**
+
 ## Dependencies
 
-- [esr/microjson](https://gitlab.com/esr/microjson/) (BSD-2-clause)
-    - mjson.h
-- [tsoding/jim](https://github.com/tsoding/jim) (MIT)
-    - jim.h
+- [technion/libscrypt](https://github.com/technion/libscrypt) [BSD-2-Clause]
+    - scrypt + sha256 implementation
 - [skandhurkat/Getopt-for-Visual-Studio](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
-    - getopt.h
+    - getopt_win32.h
 
 ## License
 ```
