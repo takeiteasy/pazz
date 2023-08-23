@@ -15,7 +15,7 @@ cli:
 	$(CC) -Isrc src/spectre.c -o build/spectre$(PROGEXT)
 
 lib:
-	$(CC) -Isrc -shared -fpic src/spectre.c -o build/libspectre$(LIBEXT)
+	$(CC) -Isrc -shared -fpic -DNO_MAIN src/spectre.c -o build/libspectre$(LIBEXT)
 
 default: cli
 

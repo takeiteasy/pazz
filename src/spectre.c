@@ -655,64 +655,6 @@ err0:
 #define PW_p                2U
 #define PW_otp_window       5 * 60 /* s */
 
-static int buf_resize(const void **buf, size_t *buf_sz, const size_t delta_sz) {
-    if (!buf)
-        return 0;
-    
-    void *new_buf = realloc((void*)*buf, (buf_sz ? *buf_sz : 0) + delta_sz);
-    if (!new_buf)
-        return 0;
-    
-    *buf = new_buf;
-    if (buf_sz)
-        *buf_sz += delta_sz;
-    
-    return 1;
-}
-
-static void buf_zero(void *buf, size_t buf_sz) {
-    uint8_t *b = buf;
-    for (; buf_sz > 0; --buf_sz)
-        *b++ = 0;
-}
-
-static int buf_del(void **buf, const size_t buf_sz) {
-    if (!buf || !*buf)
-        return 0;
-    
-    buf_zero(*buf, buf_sz);
-    free(*buf);
-    *buf = NULL;
-    
-    return 1;
-}
-
-static int buf_push(unsigned char **buf, size_t *buf_sz, const void *data, const size_t data_sz) {
-    if (!buf || !buf_sz || !data || !data_sz)
-        return 0;
-    
-    if (!buf_resize((void*)buf, buf_sz, data_sz)) {
-        buf_del((void*)buf, *buf_sz);
-        return 0;
-    }
-    
-    unsigned char *buf_offset = *buf + *buf_sz - data_sz;
-    memcpy(buf_offset, data, data_sz);
-    return 1;
-}
-
-#define buf_push_str(A, B, C) buf_push((A), (B), (C), strlen((C)))
-
-static int buf_push_int(uint8_t **buf, size_t *buf_sz, const uint32_t data) {
-    uint8_t tmp[4] = {
-        (unsigned char)((data >> 24) & UINT8_MAX),
-        (unsigned char)((data >> 16) & UINT8_MAX),
-        (unsigned char)((data >> 8L) & UINT8_MAX),
-        (unsigned char)((data >> 0L) & UINT8_MAX)
-    };
-    return buf_push(buf, buf_sz, &tmp, sizeof(tmp));
-}
-
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
 static const char* pw_template(const SpectreTemplate type, unsigned char seed) {
@@ -722,12 +664,12 @@ static const char* pw_template(const SpectreTemplate type, unsigned char seed) {
             RETURN_TEMPLATE(2, "anoxxxxxxxxxxxxxxxxx", "axxxxxxxxxxxxxxxxxno");
         case SpectreLong:
             RETURN_TEMPLATE(21, "CvcvnoCvcvCvcv", "CvcvCvcvnoCvcv", "CvcvCvcvCvcvno",
-                            "CvccnoCvcvCvcv", "CvccCvcvnoCvcv", "CvccCvcvCvcvno",
-                            "CvcvnoCvccCvcv", "CvcvCvccnoCvcv", "CvcvCvccCvcvno",
-                            "CvcvnoCvcvCvcc", "CvcvCvcvnoCvcc", "CvcvCvcvCvccno",
-                            "CvccnoCvccCvcv", "CvccCvccnoCvcv", "CvccCvccCvcvno",
-                            "CvcvnoCvccCvcc", "CvcvCvccnoCvcc", "CvcvCvccCvccno",
-                            "CvccnoCvcvCvcc", "CvccCvcvnoCvcc", "CvccCvcvCvccno");
+                                "CvccnoCvcvCvcv", "CvccCvcvnoCvcv", "CvccCvcvCvcvno",
+                                "CvcvnoCvccCvcv", "CvcvCvccnoCvcv", "CvcvCvccCvcvno",
+                                "CvcvnoCvcvCvcc", "CvcvCvcvnoCvcc", "CvcvCvcvCvccno",
+                                "CvccnoCvccCvcv", "CvccCvccnoCvcv", "CvccCvccCvcvno",
+                                "CvcvnoCvccCvcc", "CvcvCvccnoCvcc", "CvcvCvccCvccno",
+                                "CvccnoCvcvCvcc", "CvccCvcvnoCvcc", "CvccCvcvCvccno");
         case SpectreMedium:
             RETURN_TEMPLATE(2, "CvcnoCvc", "CvcCvcno");
         case SpectreShort:
@@ -775,39 +717,65 @@ static const char pw_template_char(const char c, const unsigned char seed) {
     return ch ? ch[seed % strlen(ch)] : '\0';
 }
 
+#if !defined(MAX_BUF)
+#define MAX_BUF 256
+#endif
+
+#define ResetBuffer()                              \
+    do {                                           \
+        memset(buffer, 0, MAX_BUF * sizeof(char)); \
+        bufferSize = 0;                            \
+    } while(0)
+
+#define PushString(STR)                                         \
+    do {                                                        \
+        size_t len = strlen((STR));                             \
+        memcpy(buffer + bufferSize, (STR), len * sizeof(char)); \
+        bufferSize += len;                                      \
+    } while(0)
+
+#define PushInt(INT)                                           \
+    do {                                                       \
+        uint8_t tmp[4] = {                                     \
+            (unsigned char)(((INT) >> 24) & UINT8_MAX),        \
+            (unsigned char)(((INT) >> 16) & UINT8_MAX),        \
+            (unsigned char)(((INT) >> 8L) & UINT8_MAX),        \
+            (unsigned char)(((INT) >> 0L) & UINT8_MAX)         \
+        };                                                     \
+        memcpy(buffer + bufferSize, tmp, 4 * sizeof(uint8_t)); \
+        bufferSize += 4;                                       \
+    } while(0)
+
 const char *SpectreGenerate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, SpectreTemplate type) {
-    size_t pw_salt_sz = 0;
-    unsigned char *pw_salt = NULL;
-    buf_push_str(&pw_salt, &pw_salt_sz, key_scope);
-    buf_push_int(&pw_salt, &pw_salt_sz, (unsigned int)strlen(name));
-    buf_push_str(&pw_salt, &pw_salt_sz, name);
+    static char buffer[MAX_BUF];
+    static unsigned char bufferSize = 0;
     
+    ResetBuffer();
+    PushString(key_scope);
+    PushInt((unsigned int)strlen(name));
+    PushString(name);
     unsigned char pass_key[64];
-    libscrypt_scrypt((unsigned char*)pass, strlen(pass), pw_salt, pw_salt_sz, PW_N, PW_r, PW_p, pass_key, 64);
-    buf_del((void*)&pw_salt, pw_salt_sz);
+    libscrypt_scrypt((unsigned char*)pass, strlen(pass), (const uint8_t*)buffer, bufferSize, PW_N, PW_r, PW_p, pass_key, 64);
     
-    size_t site_salt_sz = 0;
-    unsigned char *site_salt = NULL;
-    buf_push_str(&site_salt, &site_salt_sz, key_scope);
-    buf_push_int(&site_salt, &site_salt_sz, (unsigned int)strlen(site));
-    buf_push_str(&site_salt, &site_salt_sz, site);
-    buf_push_int(&site_salt, &site_salt_sz, site_counter);
-    
+    ResetBuffer();
+    PushString(key_scope);
+    PushInt((unsigned int)strlen(site));
+    PushString(site);
+    PushInt(site_counter);
     unsigned char site_key[32];
     HMAC_SHA256_CTX ctx;
     libscrypt_HMAC_SHA256_Init(&ctx, pass_key, 64);
-    libscrypt_HMAC_SHA256_Update(&ctx, site_salt, site_salt_sz);
+    libscrypt_HMAC_SHA256_Update(&ctx, buffer, bufferSize);
     libscrypt_HMAC_SHA256_Final(site_key, &ctx);
     
-    const char* template = pw_template(type, site_key[0]);
-    size_t template_sz = strlen(template);
-    char* const site_pass = malloc(sizeof(char) * template_sz + 1);
-    for (int i = 0; i < template_sz; ++i)
-      site_pass[i] = pw_template_char(template[i], site_key[i + 1]);
-    site_pass[template_sz] = '\0';
-    return site_pass;
+    ResetBuffer();
+    PushString(pw_template(type, site_key[0]));
+    for (int i = 0; i < bufferSize; i++)
+        buffer[i] = pw_template_char(buffer[i], site_key[i+1]);
+    return buffer;
 }
 
+#if !defined(NO_MAIN)
 #include <stdio.h>
 #include <ctype.h>
 
@@ -867,8 +835,8 @@ static void usage(void) {
 }
 
 static const char* lowercase(const char *str) {
-    static char lowercase[256];
-    memset(&lowercase, 0, 256 * sizeof(char));
+    static char lowercase[MAX_BUF];
+    memset(&lowercase, 0, MAX_BUF * sizeof(char));
     for (size_t i = 0; i < strlen(str); i++)
         lowercase[i] = isalpha(str[i]) ? tolower(str[i]) : str[i];
     return lowercase;
@@ -1002,3 +970,4 @@ int main(int argc, char *argv[]) {
     printf("%s", SpectreGenerate(name, password, site, counter, scope, spectreTemplate));
     return 0;
 }
+#endif
