@@ -17,8 +17,11 @@ cli:
 lib:
 	$(CC) -Isrc -shared -fpic -DNO_MAIN src/spectre.c -o build/libspectre$(LIBEXT)
 
+app:
+	$(CC) -Isrc -x objective-c -DNO_MAIN  src/spectre.c passe.m -framework Cocoa -framework Security -o build/passe
+	sh appify.sh -s build/passe -n Passe
+	mv Passe.app build
+
 default: cli
 
-all: lib cli
-
-.PHONY: default all lib cli
+.PHONY: default lib cli

@@ -5,9 +5,11 @@ Cryptographic password generation + manager based off [spectre.app](https://spec
 ## Dependencies
 
 - [technion/libscrypt](https://github.com/technion/libscrypt) [BSD-2-Clause]
-    - scrypt + sha256 implementation
+    - src/spectre.c -- scrypt + sha256 implementation
 - [skandhurkat/Getopt-for-Visual-Studio](https://github.com/skandhurkat/Getopt-for-Visual-Studio) [ZPL-2.1]
-    - getopt_win32.h
+    - src/getopt_win32.h
+- [piotrmurach/tty-prompt](https://github.com/piotrmurach/tty-prompt)
+    - passe-cli.rb gem
 
 ## License
 ```
