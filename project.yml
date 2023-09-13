@@ -11,8 +11,16 @@ settings:
   CLANG_WARN_DOCUMENTATION_COMMENTS: false
 
 targets:
-  spectre:
+  libspectre:
     type: library.dynamic
+    platform: macOS
+    sources:
+      - path: src/spectre.c
+      - path: src/spectre.h
+    settings:
+        OTHER_CFLAGS: [-DNO_MAIN]
+  spectre:
+    type: tool
     platform: macOS
     sources:
       - path: src/spectre.c

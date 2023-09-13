@@ -657,7 +657,7 @@ err0:
 
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
-static const char* pw_template(const SpectreTemplate type, unsigned char seed) {
+static const char* Template(const SpectreTemplate type, unsigned char seed) {
     switch (type) {
         default:
         case SpectreMaximum:
@@ -685,7 +685,7 @@ static const char* pw_template(const SpectreTemplate type, unsigned char seed) {
     }
 }
 
-static const char *pw_template_chars(const char c) {
+static const char *TemplateCharacters(const char c) {
     switch (c) {
         case 'V':
             return "AEIOU";
@@ -712,67 +712,99 @@ static const char *pw_template_chars(const char c) {
     }
 }
 
-static const char pw_template_char(const char c, const unsigned char seed) {
-    const char *ch = pw_template_chars(c);
+static const char TemplateChar(const char c, const unsigned char seed) {
+    const char *ch = TemplateCharacters(c);
     return ch ? ch[seed % strlen(ch)] : '\0';
 }
 
-#if !defined(MAX_BUF)
-#define MAX_BUF 256
-#endif
+static int ResizeBuffer(const void **buf, size_t *buf_sz, const size_t delta_sz) {
+    if (!buf)
+        return 0;
+    
+    void *new_buf = realloc((void*)*buf, (buf_sz ? *buf_sz : 0) + delta_sz);
+    if (!new_buf)
+        return 0;
+    
+    *buf = new_buf;
+    if (buf_sz)
+        *buf_sz += delta_sz;
+    
+    return 1;
+}
 
-#define ResetBuffer()                              \
-    do {                                           \
-        memset(buffer, 0, MAX_BUF * sizeof(char)); \
-        bufferSize = 0;                            \
-    } while(0)
+static void ZeroBuffer(void *buf, size_t buf_sz) {
+    uint8_t *b = buf;
+    for (; buf_sz > 0; --buf_sz)
+        *b++ = 0;
+}
 
-#define PushString(STR)                                         \
-    do {                                                        \
-        size_t len = strlen((STR));                             \
-        memcpy(buffer + bufferSize, (STR), len * sizeof(char)); \
-        bufferSize += len;                                      \
-    } while(0)
+static int BufferDelete(void **buf, const size_t buf_sz) {
+    if (!buf || !*buf)
+        return 0;
+    
+    ZeroBuffer(*buf, buf_sz);
+    free(*buf);
+    *buf = NULL;
+    
+    return 1;
+}
 
-#define PushInt(INT)                                           \
-    do {                                                       \
-        uint8_t tmp[4] = {                                     \
-            (unsigned char)(((INT) >> 24) & UINT8_MAX),        \
-            (unsigned char)(((INT) >> 16) & UINT8_MAX),        \
-            (unsigned char)(((INT) >> 8L) & UINT8_MAX),        \
-            (unsigned char)(((INT) >> 0L) & UINT8_MAX)         \
-        };                                                     \
-        memcpy(buffer + bufferSize, tmp, 4 * sizeof(uint8_t)); \
-        bufferSize += 4;                                       \
-    } while(0)
+static int BufferPush(unsigned char **buf, size_t *buf_sz, const void *data, const size_t data_sz) {
+    if (!buf || !buf_sz || !data || !data_sz)
+        return 0;
+    
+    if (!ResizeBuffer((void*)buf, buf_sz, data_sz)) {
+        BufferDelete((void*)buf, *buf_sz);
+        return 0;
+    }
+    
+    unsigned char *buf_offset = *buf + *buf_sz - data_sz;
+    memcpy(buf_offset, data, data_sz);
+    return 1;
+}
+
+#define BufferPushString(A, B, C) BufferPush((A), (B), (C), strlen((C)))
+
+static int BufferPushInt(uint8_t **buf, size_t *buf_sz, const uint32_t data) {
+    uint8_t tmp[4] = {
+        (unsigned char)((data >> 24) & UINT8_MAX),
+        (unsigned char)((data >> 16) & UINT8_MAX),
+        (unsigned char)((data >> 8L) & UINT8_MAX),
+        (unsigned char)((data >> 0L) & UINT8_MAX)
+    };
+    return BufferPush(buf, buf_sz, &tmp, sizeof(tmp));
+}
 
 const char *SpectreGenerate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, SpectreTemplate type) {
-    static char buffer[MAX_BUF];
-    static unsigned char bufferSize = 0;
+    unsigned char *pw_salt = NULL;
+    size_t pw_salt_sz = 0;
+    BufferPushString(&pw_salt, &pw_salt_sz, key_scope);
+    BufferPushInt(&pw_salt, &pw_salt_sz, (unsigned int)strlen(name));
+    BufferPushString(&pw_salt, &pw_salt_sz, name);
     
-    ResetBuffer();
-    PushString(key_scope);
-    PushInt((unsigned int)strlen(name));
-    PushString(name);
     unsigned char pass_key[64];
-    libscrypt_scrypt((unsigned char*)pass, strlen(pass), (const uint8_t*)buffer, bufferSize, PW_N, PW_r, PW_p, pass_key, 64);
+    libscrypt_scrypt((unsigned char*)pass, strlen(pass), pw_salt, pw_salt_sz, PW_N, PW_r, PW_p, pass_key, 64);
+    BufferDelete((void*)&pw_salt, pw_salt_sz);
     
-    ResetBuffer();
-    PushString(key_scope);
-    PushInt((unsigned int)strlen(site));
-    PushString(site);
-    PushInt(site_counter);
+    size_t site_salt_sz = 0;
+    unsigned char *site_salt = NULL;
+    BufferPushString(&site_salt, &site_salt_sz, key_scope);
+    BufferPushInt(&site_salt, &site_salt_sz, (unsigned int)strlen(site));
+    BufferPushString(&site_salt, &site_salt_sz, site);
+    BufferPushInt(&site_salt, &site_salt_sz, site_counter);
+    
     unsigned char site_key[32];
     HMAC_SHA256_CTX ctx;
     libscrypt_HMAC_SHA256_Init(&ctx, pass_key, 64);
-    libscrypt_HMAC_SHA256_Update(&ctx, buffer, bufferSize);
+    libscrypt_HMAC_SHA256_Update(&ctx, site_salt, site_salt_sz);
     libscrypt_HMAC_SHA256_Final(site_key, &ctx);
     
-    ResetBuffer();
-    PushString(pw_template(type, site_key[0]));
-    for (int i = 0; i < bufferSize; i++)
-        buffer[i] = pw_template_char(buffer[i], site_key[i+1]);
-    return buffer;
+    const char* template = Template(type, site_key[0]);
+    size_t template_sz = strlen(template);
+    char* const site_pass = malloc(sizeof(char) * template_sz + 1);
+    for (int i = 0; i < template_sz; ++i)
+        site_pass[i] = TemplateChar(template[i], site_key[i + 1]);
+    return site_pass;
 }
 
 #if !defined(NO_MAIN)
@@ -824,8 +856,8 @@ static void usage(void) {
     puts("    * recovery");
     puts("");
     puts("  Templates:");
-    puts("    * max (20 characters) (default)");
-    puts("    * long (14 characters)");
+    puts("    * max (20 characters)");
+    puts("    * long (14 characters) (default)");
     puts("    * medium (8 characters)");
     puts("    * short (4 characters)");
     puts("    * basic (8 characters, A-Z + 0-9)");
@@ -835,8 +867,8 @@ static void usage(void) {
 }
 
 static const char* lowercase(const char *str) {
-    static char lowercase[MAX_BUF];
-    memset(&lowercase, 0, MAX_BUF * sizeof(char));
+    static char lowercase[256];
+    memset(&lowercase, 0, 256 * sizeof(char));
     for (size_t i = 0; i < strlen(str); i++)
         lowercase[i] = isalpha(str[i]) ? tolower(str[i]) : str[i];
     return lowercase;
@@ -872,7 +904,7 @@ int main(int argc, char *argv[]) {
     int opt;
     extern char* optarg;
     extern int optopt;
-    int counter = 0;
+    int counter = 1;
     const char *name = NULL,
                *password = NULL,
                *site = NULL,
@@ -925,7 +957,7 @@ int main(int argc, char *argv[]) {
             ABORT("ERROR: Unknown scope \"%s\"", scope);
     }
     
-    SpectreTemplate spectreTemplate = SpectreMaximum;
+    SpectreTemplate spectreTemplate = SpectreLong;
     if (template) {
         const char *lower = lowercase(template);
         if (!strncmp("max", lower, 3) || !strncmp("maximum", lower, 7))

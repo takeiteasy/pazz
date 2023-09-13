@@ -1,12 +1,13 @@
+#!/usr/bin/env ruby
 require 'tty-prompt'
 require 'optparse'
 require 'io/console'
 require 'json'
 
-$SPECTRE_PATH = "./build/spectre"
+$SPECTRE_PATH = "spectre"
 $JSON_PATH = File.expand_path "~/.passe.json"
 
-`echo "{}" > #{$JSON_PATH}` unless File.exists? $JSON_PATH
+`echo "{}" > #{$JSON_PATH}` unless File.exist? $JSON_PATH
 
 data = File.read $JSON_PATH
 $json = JSON.parse data
@@ -17,25 +18,25 @@ def bail msg=nil
 end
 
 def selectUser
-    bail "No users, please run `passe ...`" if $json.keys.empty?
+    bail "No users, please run `passe user [username]`" if $json.keys.empty?
     return $json.keys[0] if $json.keys.length == 1
     prompt = TTY::Prompt.new
     prompt.select "Select a user:", $json.keys, filter: true, cycle: true
 end
 
 def selectSite user
-    bail "No sites saved, please run `passe ...`" if not $json.has_key? user or $json[user].empty?
+    bail "No sites saved, please run `passe new [username] [site]`" if not $json.has_key? user or $json[user].empty?
     prompt = TTY::Prompt.new
     prompt.select "Select a site (#{user}):", $json[user], filter: true, cycle: true
 end
 
-def getMasterPassword
-    puts "Enter Master Password:"
+def getMasterPassword user
+    puts "Enter Master Password (#{user}):"
     STDIN.noecho(&:gets).chomp
 end
 
 case $*[0]
-when "user"
+when "new"
     bail "No username passed to `user` option" if $*[1].nil?
     bail "Username already exists" if $json.has_key? $*[1]
     puts "Create user `#{$*[1]}`"
@@ -54,6 +55,12 @@ when "del"
     bail "Site `#{$*[2]}` doesn't exist for `#{$*[1]}`" unless $json[$*[1]].include? $*[2]
     puts "Delete `#{$*[2]}` from `#{$*[1]}`"
     $json[$*[1]].delete($*[2])
+when "list"
+    bail "No username supplied" if $*[1].nil?
+    bail "Username `#{$*[1]}` doesn't exist" unless $json.has_key? $*[1]
+    $json[$*[1]].each do |x|
+        puts x
+    end
 when "generate", "gen"
     puts `#{$SPECTRE_PATH} #{$*.drop(1).join(' ')}`
 else
@@ -62,7 +69,7 @@ else
     else
         user = selectUser
         site = selectSite user
-        pass = getMasterPassword
+        pass = getMasterPassword user
         puts `#{$SPECTRE_PATH} --name "#{user}" --pass "#{pass}" --site "#{site}"`
     end
 end
