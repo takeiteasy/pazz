@@ -12,8 +12,21 @@ $JSON_PATH = File.expand_path "~/.passe.json"
 data = File.read $JSON_PATH
 $json = JSON.parse data
 
-def bail msg=nil
+def printUsage
+    puts "usage: passe [mode] [options]"
+    puts ""
+    puts "  Modes:"
+    puts "    * new [user]  -- Create a new user"
+    puts "    * add [user] [site] -- Add a password for a user"
+    puts "    * del [user] [site] -- Delete a password for a user"
+    puts "    * list [user] -- List all sites for a user"
+    puts ""
+    puts " Run without any arguments to select user/site from a list"
+end
+
+def bail msg=nil, usage=true
     puts "ERROR: #{msg}" unless msg.nil?
+    printUsage if usage
     abort
 end
 
