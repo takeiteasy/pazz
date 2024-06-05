@@ -11,24 +11,14 @@ else
 	endif
 endif
 
-cli:
-	$(CC) -Isrc src/spectre.c -o spectre$(PROGEXT)
+default: all
 
 lib:
-	$(CC) -Isrc -shared -fpic -DNO_MAIN src/spectre.c -o libspectre$(LIBEXT)
+	$(CC) -Isrc -shared -fpic src/spectre.c -o libspectre$(LIBEXT)
 
-app:
-	$(CC) -Isrc -x objective-c -DNO_MAIN  src/spectre.c src/passe-gui.m -framework Cocoa -framework Security -o passe
-	sh appify.sh -s passe -n Passe
+cli: lib
+	$(CC) -Isrc src/cli.c -L. -lspectre -o spectre$(PROGEXT)
 
-all: lib app cli
+all: lib cli
 
-install: cli
-	mv spectre /usr/local/include
-
-install-app: app
-	mv Passe.app /Applications
-
-default: cli
-
-.PHONY: default lib cli
+.PHONY: default all cli lib
