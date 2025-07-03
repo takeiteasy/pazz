@@ -154,6 +154,7 @@ h1 {
 .body {
     position: absolute;
     margin-top: -15px;
+    position: relative;
 }
 
 #test {
@@ -162,8 +163,18 @@ h1 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    min-width: 390px;
+    min-width: 400px;
     max-width: 640px;
     min-height: 128px;
     max-height: 480px;
+}
+
+li > .username {
+    padding: 3px;
+}
+
+.username:hover {
+    background-color: white;
+    color: black;
+    cursor: pointer;
 }
