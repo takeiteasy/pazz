@@ -657,22 +657,22 @@ err0:
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
 typedef enum {
-    SpectreMaximum,
-    SpectreLong,
-    SpectreMedium,
-    SpectreShort,
-    SpectreBasic,
-    SpectrePin,
-    SpectreName,
-    SpectrePhrase
+    TemplateMaximum,
+    TemplateLong,
+    TemplateMedium,
+    TemplateShort,
+    TemplateBasic,
+    TemplatePin,
+    TemplateName,
+    TemplatePhrase
 } pazz_template_t;
 
 static const char* Template(const pazz_template_t type, unsigned char seed) {
     switch (type) {
         default:
-        case SpectreMaximum:
+        case TemplateMaximum:
             RETURN_TEMPLATE(2, "anoxxxxxxxxxxxxxxxxx", "axxxxxxxxxxxxxxxxxno");
-        case SpectreLong:
+        case TemplateLong:
             RETURN_TEMPLATE(21, "CvcvnoCvcvCvcv", "CvcvCvcvnoCvcv", "CvcvCvcvCvcvno",
                                 "CvccnoCvcvCvcv", "CvccCvcvnoCvcv", "CvccCvcvCvcvno",
                                 "CvcvnoCvccCvcv", "CvcvCvccnoCvcv", "CvcvCvccCvcvno",
@@ -680,17 +680,17 @@ static const char* Template(const pazz_template_t type, unsigned char seed) {
                                 "CvccnoCvccCvcv", "CvccCvccnoCvcv", "CvccCvccCvcvno",
                                 "CvcvnoCvccCvcc", "CvcvCvccnoCvcc", "CvcvCvccCvccno",
                                 "CvccnoCvcvCvcc", "CvccCvcvnoCvcc", "CvccCvcvCvccno");
-        case SpectreMedium:
+        case TemplateMedium:
             RETURN_TEMPLATE(2, "CvcnoCvc", "CvcCvcno");
-        case SpectreShort:
+        case TemplateShort:
             return "Cvcn";
-        case SpectreBasic:
+        case TemplateBasic:
             RETURN_TEMPLATE(3, "aaanaaan", "aannaaan", "aaannaaa");
-        case SpectrePin:
+        case TemplatePin:
             return "nnnn";
-        case SpectreName:
+        case TemplateName:
             return "cvccvcvcv";
-        case SpectrePhrase:
+        case TemplatePhrase:
             RETURN_TEMPLATE(3, "cvcc cvc cvccvcv cvc", "cvc cvccvcvcv cvcv", "cv cvccv cvc cvcvccv");
     }
 }
@@ -785,7 +785,7 @@ static int BufferPushInt(uint8_t **buf, size_t *buf_sz, const uint32_t data) {
     return BufferPush(buf, buf_sz, &tmp, sizeof(tmp));
 }
 
-const char* generate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type) {
+const char* spectre(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type) {
     unsigned char *pw_salt = NULL;
     size_t pw_salt_sz = 0;
     BufferPushString(&pw_salt, &pw_salt_sz, key_scope);

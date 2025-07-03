@@ -1,317 +1,402 @@
-<!DOCTYPE html>
+<!--
+ script.js -- https://github.com/takeiteasy/pazz
+
+ The MIT License (MIT)
+
+ Copyright (c) 2022 George Watson
+
+ Permission is hereby granted, free of charge, to any person
+ obtaining a copy of this software and associated documentation
+ files (the "Software"), to deal in the Software without restriction,
+ including without limitation the rights to use, copy, modify, merge,
+ publish, distribute, sublicense, and/or sell copies of the Software,
+ and to permit persons to whom the Software is furnished to do so,
+ subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be
+ included in all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ -->
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emscripten C Library with Complex Function</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            max-width: 700px; /* Slightly wider for more inputs */
-            width: 100%;
-            text-align: center;
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 25px;
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: 600; /* font-semibold */
-        }
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #34495e;
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-        input[type="text"], input[type="number"], select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dcdfe6;
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: border-color 0.3s ease;
-        }
-        input[type="text"]:focus, input[type="number"]:focus, select:focus {
-            border-color: #3b82f6; /* blue-500 */
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-        }
-        button {
-            background-color: #3b82f6; /* blue-500 */
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #2563eb; /* blue-600 */
-            transform: translateY(-2px);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        #output {
-            margin-top: 25px;
-            padding: 15px;
-            background-color: #ecf0f1;
-            border-radius: 8px;
-            text-align: left;
-            min-height: 80px;
-            color: #2c3e50;
-            font-size: 1rem;
-            word-wrap: break-word;
-            white-space: pre-wrap; /* Preserve whitespace and line breaks */
-        }
-        .message-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #4CAF50; /* Green for success */
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-        .message-box.error {
-            background-color: #f44336; /* Red for error */
-        }
-        .message-box.show {
-            opacity: 1;
-        }
-
-        body {
-          margin: 0;
-          height: 100vh; /* Ensure the body takes full viewport height for scrolling */
-          overflow-y: scroll; /* Allow vertical scrolling */
-        }
-
-        .scrolling-checkerboard {
-          width: 100%;
-          min-height: 100vh; /* Ensure the element is tall enough for the background to show */
-          background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
-          background-size: 40px 40px; /* Size of each checkerboard square */
-
-          /* Animation for the scrolling effect */
-          animation: scrollCheckerboard 50s linear infinite;
-        }
-
-        @keyframes scrollCheckerboard {
-          from {
-            background-position: 0 0;
-          }
-          to {
-            background-position: -100% 100%; /* Scrolls vertically. Change to 100% 0 for horizontal, or adjust both for diagonal */
-          }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Call C Function: `spectre_generate`</h1>
-        <p class="text-gray-600 mb-6">Enter parameters for the C function and see the generated output.</p>
-
-        <div class="input-group">
-            <label for="nameInput">Name:</label>
-            <input type="text" id="nameInput" value="JohnDoe">
-        </div>
-
-        <div class="input-group">
-            <label for="passInput">Password:</label>
-            <input type="text" id="passInput" value="MySecurePass123">
-        </div>
-
-        <div class="input-group">
-            <label for="siteInput">Site:</label>
-            <input type="text" id="siteInput" value="example.com">
-        </div>
-
-        <div class="input-group">
-            <label for="siteCounterInput">Site Counter:</label>
-            <input type="number" id="siteCounterInput" value="5">
-        </div>
-
-        <div class="input-group">
-            <label for="keyScopeInput">Key Scope:</label>
-            <input type="text" id="keyScopeInput" value="personal">
-        </div>
-
-        <div class="input-group">
-            <label for="spectreTypeSelect">Spectre Template Type:</label>
-            <select id="spectreTypeSelect">
-                <option value="0">SpectreMaximum</option>
-                <option value="1">SpectreLong</option>
-                <option value="2">SpectreMedium</option>
-                <option value="3">SpectreShort</option>
-                <option value="4">SpectreBasic</option>
-                <option value="5">SpectrePin</option>
-                <option value="6">SpectreName</option>
-                <option value="7">SpectrePhrase</option>
-            </select>
-        </div>
-
-        <button id="callCFunction">Generate Spectre</button>
-
-        <div id="output" class="mt-6 p-4 bg-gray-100 rounded-lg text-gray-800 text-left">
-            Output will appear here...
-        </div>
-    </div>
-
-    <div id="messageBox" class="message-box"></div>
-
-    <script>
-        // Define a global Module object. Emscripten's generated JS will use this.
-        var Module = {
-            onRuntimeInitialized: function() {
-                console.log("Emscripten runtime initialized!");
-                // The C functions are now available via Module._functionName
-                document.getElementById('callCFunction').disabled = false;
-                showMessage('Emscripten module loaded!', 'success');
-            },
-            print: function(text) { console.log('stdout: ' + text); },
-            printErr: function(text) { console.error('stderr: ' + text); }
-        };
-    </script>
-    <!-- Load the Emscripten generated JavaScript file -->
-    <script src="pazz.js"></script>
-
-    <script>
-        // Function to display messages to the user
-        function showMessage(message, type = 'info') {
-            const messageBox = document.getElementById('messageBox');
-            messageBox.textContent = message;
-            messageBox.className = 'message-box show'; // Reset and show
-            if (type === 'error') {
-                messageBox.classList.add('error');
-            } else {
-                messageBox.classList.remove('error');
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Emscripten C Library with Complex Function</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: #f0f4f8;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .container {
+                background-color: #ffffff;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                max-width: 700px; /* Slightly wider for more inputs */
+                width: 100%;
+                text-align: center;
+            }
+            h1 {
+                color: #2c3e50;
+                margin-bottom: 25px;
+                font-size: 2.25rem; /* text-4xl */
+                font-weight: 600; /* font-semibold */
+            }
+            .input-group {
+                margin-bottom: 15px;
+                text-align: left;
+            }
+            label {
+                display: block;
+                margin-bottom: 8px;
+                color: #34495e;
+                font-weight: 500;
+                font-size: 0.95rem;
+            }
+            input[type="text"],
+            input[type="number"],
+            select {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #dcdfe6;
+                border-radius: 8px;
+                font-size: 1rem;
+                box-sizing: border-box;
+                transition: border-color 0.3s ease;
+            }
+            input[type="text"]:focus,
+            input[type="number"]:focus,
+            select:focus {
+                border-color: #3b82f6; /* blue-500 */
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            }
+            button {
+                background-color: #3b82f6; /* blue-500 */
+                color: white;
+                padding: 12px 25px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1.1rem;
+                cursor: pointer;
+                transition:
+                    background-color 0.3s ease,
+                    transform 0.1s ease;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                margin-top: 20px;
+            }
+            button:hover {
+                background-color: #2563eb; /* blue-600 */
+                transform: translateY(-2px);
+            }
+            button:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            }
+            #output {
+                margin-top: 25px;
+                padding: 15px;
+                background-color: #ecf0f1;
+                border-radius: 8px;
+                text-align: left;
+                min-height: 80px;
+                color: #2c3e50;
+                font-size: 1rem;
+                word-wrap: break-word;
+                white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            }
+            .message-box {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #4caf50; /* Green for success */
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+            }
+            .message-box.error {
+                background-color: #f44336; /* Red for error */
+            }
+            .message-box.show {
+                opacity: 1;
             }
 
-            setTimeout(() => {
-                messageBox.classList.remove('show');
-            }, 3000); // Hide after 3 seconds
-        }
+            body {
+                margin: 0;
+                height: 100vh; /* Ensure the body takes full viewport height for scrolling */
+                overflow-y: scroll; /* Allow vertical scrolling */
+            }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const nameInput = document.getElementById('nameInput');
-            const passInput = document.getElementById('passInput');
-            const siteInput = document.getElementById('siteInput');
-            const siteCounterInput = document.getElementById('siteCounterInput');
-            const keyScopeInput = document.getElementById('keyScopeInput');
-            const spectreTypeSelect = document.getElementById('spectreTypeSelect');
-            const callCFunctionButton = document.getElementById('callCFunction');
-            const outputElement = document.getElementById('output');
+            .scrolling-checkerboard {
+                width: 100%;
+                min-height: 100vh; /* Ensure the element is tall enough for the background to show */
+                background: repeating-conic-gradient(
+                    lightgray 0% 25%,
+                    white 0% 50%
+                );
+                background-size: 40px 40px; /* Size of each checkerboard square */
 
-            // Disable button until Emscripten module is ready
-            callCFunctionButton.disabled = true;
-            outputElement.textContent = "Loading Emscripten module...";
+                /* Animation for the scrolling effect */
+                animation: scrollCheckerboard 50s linear infinite;
+            }
 
-            callCFunctionButton.addEventListener('click', () => {
-                if (!Module || !Module._generate) {
-                    showMessage('Emscripten module not yet ready or function not found.', 'error');
-                    return;
+            @keyframes scrollCheckerboard {
+                from {
+                    background-position: 0 0;
+                }
+                to {
+                    background-position: -100% 100%; /* Scrolls vertically. Change to 100% 0 for horizontal, or adjust both for diagonal */
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Call C Function: `spectre`</h1>
+            <p class="text-gray-600 mb-6">
+                Enter parameters for the C function and see the generated
+                output.
+            </p>
+
+            <div class="input-group">
+                <label for="nameInput">Name:</label>
+                <input type="text" id="nameInput" value="JohnDoe" />
+            </div>
+
+            <div class="input-group">
+                <label for="passInput">Password:</label>
+                <input type="text" id="passInput" value="MySecurePass123" />
+            </div>
+
+            <div class="input-group">
+                <label for="siteInput">Site:</label>
+                <input type="text" id="siteInput" value="example.com" />
+            </div>
+
+            <div class="input-group">
+                <label for="siteCounterInput">Site Counter:</label>
+                <input type="number" id="siteCounterInput" value="5" />
+            </div>
+
+            <div class="input-group">
+                <label for="keyScopeInput">Key Scope:</label>
+                <input type="text" id="keyScopeInput" value="personal" />
+            </div>
+
+            <div class="input-group">
+                <label for="spectreTypeSelect">Template Type:</label>
+                <select id="spectreTypeSelect">
+                    <option value="0">TemplateMaximum</option>
+                    <option value="1">TemplateLong</option>
+                    <option value="2">TemplateMedium</option>
+                    <option value="3">TemplateShort</option>
+                    <option value="4">TemplateBasic</option>
+                    <option value="5">TemplatePin</option>
+                    <option value="6">TemplateName</option>
+                    <option value="7">TemplatePhrase</option>
+                </select>
+            </div>
+
+            <button id="callCFunction">Generate Spectre</button>
+
+            <div
+                id="output"
+                class="mt-6 p-4 bg-gray-100 rounded-lg text-gray-800 text-left"
+            >
+                Output will appear here...
+            </div>
+        </div>
+
+        <div id="messageBox" class="message-box"></div>
+
+        <script>
+            // Define a global Module object. Emscripten's generated JS will use this.
+            var Module = {
+                onRuntimeInitialized: function () {
+                    console.log("Emscripten runtime initialized!");
+                    // The C functions are now available via Module._functionName
+                    document.getElementById("callCFunction").disabled = false;
+                    showMessage("Emscripten module loaded!", "success");
+                },
+                print: function (text) {
+                    console.log("stdout: " + text);
+                },
+                printErr: function (text) {
+                    console.error("stderr: " + text);
+                },
+            };
+        </script>
+        <!-- Load the Emscripten generated JavaScript file -->
+        <script src="pazz.js"></script>
+
+        <script>
+            // Function to display messages to the user
+            function showMessage(message, type = "info") {
+                const messageBox = document.getElementById("messageBox");
+                messageBox.textContent = message;
+                messageBox.className = "message-box show"; // Reset and show
+                if (type === "error") {
+                    messageBox.classList.add("error");
+                } else {
+                    messageBox.classList.remove("error");
                 }
 
-                // Get values from inputs
-                const nameJs = nameInput.value;
-                const passJs = passInput.value;
-                const siteJs = siteInput.value;
-                const siteCounterJs = parseInt(siteCounterInput.value, 10); // Convert to integer
-                const keyScopeJs = keyScopeInput.value;
-                const spectreTypeJs = parseInt(spectreTypeSelect.value, 10); // Convert selected value to integer
+                setTimeout(() => {
+                    messageBox.classList.remove("show");
+                }, 3000); // Hide after 3 seconds
+            }
 
-                let namePtr = 0;
-                let passPtr = 0;
-                let sitePtr = 0;
-                let keyScopePtr = 0;
-                let resultPtr = 0;
+            document.addEventListener("DOMContentLoaded", () => {
+                const nameInput = document.getElementById("nameInput");
+                const passInput = document.getElementById("passInput");
+                const siteInput = document.getElementById("siteInput");
+                const siteCounterInput =
+                    document.getElementById("siteCounterInput");
+                const keyScopeInput = document.getElementById("keyScopeInput");
+                const spectreTypeSelect =
+                    document.getElementById("spectreTypeSelect");
+                const callCFunctionButton =
+                    document.getElementById("callCFunction");
+                const outputElement = document.getElementById("output");
 
-                try {
-                    // Allocate memory and write JavaScript strings to Emscripten heap
-                    // +1 for null terminator
-                    namePtr = Module._malloc(Module.lengthBytesUTF8(nameJs) + 1);
-                    Module.stringToUTF8(nameJs, namePtr, Module.lengthBytesUTF8(nameJs) + 1);
+                // Disable button until Emscripten module is ready
+                callCFunctionButton.disabled = true;
+                outputElement.textContent = "Loading Emscripten module...";
 
-                    passPtr = Module._malloc(Module.lengthBytesUTF8(passJs) + 1);
-                    Module.stringToUTF8(passJs, passPtr, Module.lengthBytesUTF8(passJs) + 1);
+                callCFunctionButton.addEventListener("click", () => {
+                    if (!Module || !Module._spectre) {
+                        showMessage(
+                            "Emscripten module not yet ready or function not found.",
+                            "error",
+                        );
+                        return;
+                    }
 
-                    sitePtr = Module._malloc(Module.lengthBytesUTF8(siteJs) + 1);
-                    Module.stringToUTF8(siteJs, sitePtr, Module.lengthBytesUTF8(siteJs) + 1);
+                    // Get values from inputs
+                    const nameJs = nameInput.value;
+                    const passJs = passInput.value;
+                    const siteJs = siteInput.value;
+                    const siteCounterJs = parseInt(siteCounterInput.value, 10); // Convert to integer
+                    const keyScopeJs = keyScopeInput.value;
+                    const spectreTypeJs = parseInt(spectreTypeSelect.value, 10); // Convert selected value to integer
 
-                    keyScopePtr = Module._malloc(Module.lengthBytesUTF8(keyScopeJs) + 1);
-                    Module.stringToUTF8(keyScopeJs, keyScopePtr, Module.lengthBytesUTF8(keyScopeJs) + 1);
+                    let namePtr = 0;
+                    let passPtr = 0;
+                    let sitePtr = 0;
+                    let keyScopePtr = 0;
+                    let resultPtr = 0;
 
-                    // Call the C function with all parameters
-                    // Order of arguments: name, pass, site, site_counter, key_scope, type
-                    resultPtr = Module._generate(
-                        namePtr,
-                        passPtr,
-                        sitePtr,
-                        siteCounterJs, // Passed directly as number
-                        keyScopePtr,
-                        spectreTypeJs  // Passed directly as number (enum value)
-                    );
+                    try {
+                        // Allocate memory and write JavaScript strings to Emscripten heap
+                        // +1 for null terminator
+                        namePtr = Module._malloc(
+                            Module.lengthBytesUTF8(nameJs) + 1,
+                        );
+                        Module.stringToUTF8(
+                            nameJs,
+                            namePtr,
+                            Module.lengthBytesUTF8(nameJs) + 1,
+                        );
 
-                    // Read the result string from the Emscripten heap
-                    const resultJsString = Module.UTF8ToString(resultPtr);
+                        passPtr = Module._malloc(
+                            Module.lengthBytesUTF8(passJs) + 1,
+                        );
+                        Module.stringToUTF8(
+                            passJs,
+                            passPtr,
+                            Module.lengthBytesUTF8(passJs) + 1,
+                        );
 
-                    // Display the result
-                    outputElement.textContent = `C Function Output:\n${resultJsString}`;
-                    showMessage('C function executed successfully!', 'success');
+                        sitePtr = Module._malloc(
+                            Module.lengthBytesUTF8(siteJs) + 1,
+                        );
+                        Module.stringToUTF8(
+                            siteJs,
+                            sitePtr,
+                            Module.lengthBytesUTF8(siteJs) + 1,
+                        );
 
-                } catch (e) {
-                    console.error("Error calling C function:", e);
-                    outputElement.textContent = `Error: ${e.message || e}`;
-                    showMessage('An error occurred during C function call.', 'error');
-                } finally {
-                    // Free allocated memory for input strings
-                    if (namePtr) Module._free(namePtr);
-                    if (passPtr) Module._free(passPtr);
-                    if (sitePtr) Module._free(sitePtr);
-                    if (keyScopePtr) Module._free(keyScopePtr);
+                        keyScopePtr = Module._malloc(
+                            Module.lengthBytesUTF8(keyScopeJs) + 1,
+                        );
+                        Module.stringToUTF8(
+                            keyScopeJs,
+                            keyScopePtr,
+                            Module.lengthBytesUTF8(keyScopeJs) + 1,
+                        );
 
-                    // Free memory for the result string (allocated by C's malloc)
-                    if (resultPtr) Module._free(resultPtr);
+                        // Call the C function with all parameters
+                        // Order of arguments: name, pass, site, site_counter, key_scope, type
+                        resultPtr = Module._spectre(
+                            namePtr,
+                            passPtr,
+                            sitePtr,
+                            siteCounterJs, // Passed directly as number
+                            keyScopePtr,
+                            spectreTypeJs, // Passed directly as number (enum value)
+                        );
 
-                    console.log("Freed all allocated memory.");
-                }
+                        // Read the result string from the Emscripten heap
+                        const resultJsString = Module.UTF8ToString(resultPtr);
+
+                        // Display the result
+                        outputElement.textContent = `C Function Output:\n${resultJsString}`;
+                        showMessage(
+                            "C function executed successfully!",
+                            "success",
+                        );
+                    } catch (e) {
+                        console.error("Error calling C function:", e);
+                        outputElement.textContent = `Error: ${e.message || e}`;
+                        showMessage(
+                            "An error occurred during C function call.",
+                            "error",
+                        );
+                    } finally {
+                        // Free allocated memory for input strings
+                        if (namePtr) Module._free(namePtr);
+                        if (passPtr) Module._free(passPtr);
+                        if (sitePtr) Module._free(sitePtr);
+                        if (keyScopePtr) Module._free(keyScopePtr);
+
+                        // Free memory for the result string (allocated by C's malloc)
+                        if (resultPtr) Module._free(resultPtr);
+
+                        console.log("Freed all allocated memory.");
+                    }
+                });
             });
-        });
-    </script>
-    <div class="scrolling-checkerboard">
-      <p>Scroll down to see the checkerboard background!</p>
-      <p style="height: 1000px;">Lots of content to make the page scroll.</p>
-    </div>
-</body>
+        </script>
+        <div class="scrolling-checkerboard">
+            <p>Scroll down to see the checkerboard background!</p>
+            <p style="height: 1000px">
+                Lots of content to make the page scroll.
+            </p>
+        </div>
+    </body>
 </html>

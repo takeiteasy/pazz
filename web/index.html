@@ -7,6 +7,19 @@
         <title>PAZZ Password Manager</title>
     </head>
     <body>
+        <script>
+            var Module = {
+                onRuntimeInitialized: function () {},
+                print: function (text) {
+                    console.log("stdout: " + text);
+                },
+                printErr: function (text) {
+                    console.error("stderr: " + text);
+                },
+            };
+        </script>
+        <script src="pazz.js"></script>
+        <script src="script.js"></script>
         <div class="scrolling-checkerboard">
             <div class="container" id="test">
                 <div class="background"></div>
@@ -20,7 +33,6 @@
                 <div class="vertical" id="right"></div>
                 <div class="body">
                     <h1>Welcome to PAZZ password manager</h1>
-                    <p>test</p>
                 </div>
             </div>
         </div>
