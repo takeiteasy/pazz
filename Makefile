@@ -1,24 +1,9 @@
-ifeq ($(OS),Windows_NT)
-	PROGEXT=.exe
-	LIBEXT=.dll
-else
-	PROGEXT=
-	UNAME:=$(shell uname -s)
-	ifeq ($(UNAME),Darwin)
-		LIBEXT=.dylib
-	else
-		LIBEXT=.so
-	endif
-endif
+EMCC := `which emcc`
 
-default: all
-
-lib:
-	$(CC) -Isrc -shared -fpic src/spectre.c -o libspectre$(LIBEXT)
-
-cli: lib
-	$(CC) -Isrc src/cli.c -L. -lspectre -o spectre$(PROGEXT)
-
-all: lib cli
-
-.PHONY: default all cli lib
+default:
+	$(EMCC) \
+		-s SINGLE_FILE=1 \
+		-s ALLOW_MEMORY_GROWTH=1 \
+		-s EXPORTED_FUNCTIONS="['_generate', '_malloc', '_free']" \
+		-s EXPORTED_RUNTIME_METHODS="['lengthBytesUTF8', 'stringToUTF8', 'UTF8ToString']" \
+		pazz.c -o web/pazz.js

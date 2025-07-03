@@ -1,7 +1,7 @@
-/* spectre.c -- https://github.com/takeiteasy/libspectre
- 
+/* pazz.c -- https://github.com/takeiteasy/pazz
+
  scrypt + sha256 implementation taken from -- https://github.com/technion/libscrypt
- 
+
  The MIT License (MIT)
 
  Copyright (c) 2022 George Watson
@@ -25,7 +25,6 @@
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#include "spectre.h"
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -52,7 +51,7 @@
 
 static INLINE uint32_t be32dec(const void *pp) {
     const uint8_t *p = (uint8_t const *)pp;
-    
+
     return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
         ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
 }
@@ -68,7 +67,7 @@ static INLINE void be32enc(void *pp, uint32_t x) {
 
 static INLINE uint32_t le32dec(const void *pp) {
     const uint8_t *p = (uint8_t const *)pp;
-    
+
     return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
         ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
 }
@@ -657,7 +656,18 @@ err0:
 
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
-static const char* Template(const SpectreTemplate type, unsigned char seed) {
+typedef enum {
+    SpectreMaximum,
+    SpectreLong,
+    SpectreMedium,
+    SpectreShort,
+    SpectreBasic,
+    SpectrePin,
+    SpectreName,
+    SpectrePhrase
+} pazz_template_t;
+
+static const char* Template(const pazz_template_t type, unsigned char seed) {
     switch (type) {
         default:
         case SpectreMaximum:
@@ -720,15 +730,15 @@ static const char TemplateChar(const char c, const unsigned char seed) {
 static int ResizeBuffer(const void **buf, size_t *buf_sz, const size_t delta_sz) {
     if (!buf)
         return 0;
-    
+
     void *new_buf = realloc((void*)*buf, (buf_sz ? *buf_sz : 0) + delta_sz);
     if (!new_buf)
         return 0;
-    
+
     *buf = new_buf;
     if (buf_sz)
         *buf_sz += delta_sz;
-    
+
     return 1;
 }
 
@@ -741,23 +751,23 @@ static void ZeroBuffer(void *buf, size_t buf_sz) {
 static int BufferDelete(void **buf, const size_t buf_sz) {
     if (!buf || !*buf)
         return 0;
-    
+
     ZeroBuffer(*buf, buf_sz);
     free(*buf);
     *buf = NULL;
-    
+
     return 1;
 }
 
 static int BufferPush(unsigned char **buf, size_t *buf_sz, const void *data, const size_t data_sz) {
     if (!buf || !buf_sz || !data || !data_sz)
         return 0;
-    
+
     if (!ResizeBuffer((void*)buf, buf_sz, data_sz)) {
         BufferDelete((void*)buf, *buf_sz);
         return 0;
     }
-    
+
     unsigned char *buf_offset = *buf + *buf_sz - data_sz;
     memcpy(buf_offset, data, data_sz);
     return 1;
@@ -775,30 +785,30 @@ static int BufferPushInt(uint8_t **buf, size_t *buf_sz, const uint32_t data) {
     return BufferPush(buf, buf_sz, &tmp, sizeof(tmp));
 }
 
-const char *SpectreGenerate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, SpectreTemplate type) {
+const char* generate(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type) {
     unsigned char *pw_salt = NULL;
     size_t pw_salt_sz = 0;
     BufferPushString(&pw_salt, &pw_salt_sz, key_scope);
     BufferPushInt(&pw_salt, &pw_salt_sz, (unsigned int)strlen(name));
     BufferPushString(&pw_salt, &pw_salt_sz, name);
-    
+
     unsigned char pass_key[64];
     libscrypt_scrypt((unsigned char*)pass, strlen(pass), pw_salt, pw_salt_sz, PW_N, PW_r, PW_p, pass_key, 64);
     BufferDelete((void*)&pw_salt, pw_salt_sz);
-    
+
     size_t site_salt_sz = 0;
     unsigned char *site_salt = NULL;
     BufferPushString(&site_salt, &site_salt_sz, key_scope);
     BufferPushInt(&site_salt, &site_salt_sz, (unsigned int)strlen(site));
     BufferPushString(&site_salt, &site_salt_sz, site);
     BufferPushInt(&site_salt, &site_salt_sz, site_counter);
-    
+
     unsigned char site_key[32];
     HMAC_SHA256_CTX ctx;
     libscrypt_HMAC_SHA256_Init(&ctx, pass_key, 64);
     libscrypt_HMAC_SHA256_Update(&ctx, site_salt, site_salt_sz);
     libscrypt_HMAC_SHA256_Final(site_key, &ctx);
-    
+
     const char* template = Template(type, site_key[0]);
     size_t template_sz = strlen(template);
     char* const site_pass = malloc(sizeof(char) * template_sz + 1);
