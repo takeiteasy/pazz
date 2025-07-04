@@ -41,6 +41,10 @@ body {
     image-rendering: pixelated;
 }
 
+button {
+    font-family: "EBMain";
+}
+
 h1 {
     font-family: "curtain_call";
 }
@@ -171,10 +175,60 @@ h1 {
 
 li > .username {
     padding: 3px;
+    position: relative;
+    top: 2px;
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
 }
 
 .username:hover {
     background-color: white;
     color: black;
     cursor: pointer;
+}
+
+.mini-button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 5;
+}
+
+.mini-button:hover {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+}
+
+.mini-mini {
+    font-size: 12px;
+}
+
+#username-already-exists {
+    display: none;
+}
+
+.mini-input {
+    background: transparent;
+    color: white;
+    border: 0;
+    font-family: "EBMain";
+    font-size: 18px;
+}
+
+.mini-input:focus {
+    outline: none;
+}
+
+#add-password-body {
+    display: none;
+}
+
+#add-site-body {
+    display: none;
 }

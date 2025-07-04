@@ -35,15 +35,100 @@
                     <h1>Welcome to PAZZ password manager</h1>
                     <div id="inner-body"></div>
                     <div id="add-username-body">
-                        <form id="add-username">
-                            <input
-                                type="text"
-                                id="username-input"
-                                placeholder="username..."
-                                required
-                            />
-                            <button type="submit">+</button>
-                        </form>
+                        <table>
+                            <tr>
+                                <form id="add-username">
+                                    <td>
+                                        <input
+                                            type="text"
+                                            class="mini-input"
+                                            id="username-input"
+                                            placeholder="username..."
+                                            required
+                                        />
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="submit"
+                                            class="mini-button"
+                                            id="submit-username"
+                                        >
+                                            +
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+                            <tr id="username-already-exists">
+                                <td colspan="2">
+                                    <span style="color: red"
+                                        >This username already exists!</span
+                                    >
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="add-password-body">
+                        <table>
+                            <tr>
+                                <form id="add-password">
+                                    <td>
+                                        <input
+                                            type="password"
+                                            class="mini-input"
+                                            id="password-input"
+                                            placeholder="password..."
+                                            required
+                                        />
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="submit"
+                                            class="mini-button"
+                                            id="submit-password"
+                                        >
+                                            +
+                                        </button>
+                                    </td>
+                                </form>
+                                <form id="cancel-password">
+                                    <td>
+                                        <button
+                                            type="submit"
+                                            class="mini-button"
+                                            id="cancel-password"
+                                        >
+                                            x
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="add-site-body">
+                        <table>
+                            <tr>
+                                <form id="add-site">
+                                    <td>
+                                        <input
+                                            type="text"
+                                            class="mini-input"
+                                            id="site-input"
+                                            placeholder="site..."
+                                            required
+                                        />
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="submit"
+                                            class="mini-button"
+                                            id="submit-site"
+                                        >
+                                            +
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             </div>
