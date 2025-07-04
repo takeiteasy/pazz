@@ -138,8 +138,9 @@ function updatePasswordsList() {
   document.querySelectorAll(".site").forEach((site) => {
     site.addEventListener("contextmenu", function (e) {
       e.preventDefault();
-      // TODO: Run password though spectre
-      copyToClipboard(site.textContent);
+      copyToClipboard(
+        spectre(State.username, State.password, site.textContent),
+      );
     });
   });
 }
@@ -163,6 +164,9 @@ function moveBackToUsername() {
   document.getElementById("add-username-body").style.display = "block";
   document.getElementById("add-password-body").style.display = "none";
   document.getElementById("add-site-body").style.display = "none";
+  var box = document.getElementById("password-box");
+  box.style.display = "none";
+  box.innerHTML = "";
   updateUsernamesList();
 }
 
@@ -226,6 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
       err.style.display = "table";
       return;
     }
+    document.getElementById("password-box").style.display = "none";
     err.style.display = "none";
     addUserSite(State.username, site);
     updatePasswordsList();
@@ -244,12 +249,14 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("add-password-body").style.display = "block";
     } else if (e.target.classList.contains("remove-site")) {
       const site = e.target.dataset.site;
+      document.getElementById("password-box").style.display = "none";
       removeUserSite(State.username, site);
       updatePasswordsList();
     } else if (e.target.classList.contains("site")) {
       const site = e.target.textContent;
-      // TODO: Run password though spectre + show password
-      console.log(site);
+      var box = document.getElementById("password-box");
+      box.style.display = "block";
+      box.innerHTML = spectre(State.username, State.password, site);
     } else if (e.target.classList.contains("return")) {
       moveBackToUsername();
     }

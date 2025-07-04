@@ -12,7 +12,7 @@ else
 endif
 
 EMCC := `which emcc`
-DST := web/pazz.js
+DST := docs/pazz.js
 SRC := src/pazz.c
 CLI_SRC := src/pazz_cli.c $(SRC)
 CLI_DST := pazz$(PROGEXT)

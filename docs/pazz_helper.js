@@ -27,24 +27,29 @@ function spectre(
   name,
   pass,
   site,
-  counter = 0,
+  counter = 1,
   scope = "com.lyndir.masterpassword",
-  type = 0,
+  type = 1,
 ) {
   if (!Module || !Module._spectre) {
     console.log("Emscripten module not yet ready or function not found.");
     return;
   }
+  let namePtr = null;
+  let passPtr = null;
+  let sitePtr = null;
+  let keyScopePtr = null;
+  let resultPtr = null;
   try {
-    let namePtr = Module._malloc(Module.lengthBytesUTF8(name) + 1);
+    namePtr = Module._malloc(Module.lengthBytesUTF8(name) + 1);
     Module.stringToUTF8(name, namePtr, Module.lengthBytesUTF8(name) + 1);
-    let passPtr = Module._malloc(Module.lengthBytesUTF8(pass) + 1);
+    passPtr = Module._malloc(Module.lengthBytesUTF8(pass) + 1);
     Module.stringToUTF8(pass, passPtr, Module.lengthBytesUTF8(pass) + 1);
-    let sitePtr = Module._malloc(Module.lengthBytesUTF8(site) + 1);
+    sitePtr = Module._malloc(Module.lengthBytesUTF8(site) + 1);
     Module.stringToUTF8(site, sitePtr, Module.lengthBytesUTF8(site) + 1);
-    let keyScopePtr = Module._malloc(Module.lengthBytesUTF8(keyScope) + 1);
+    keyScopePtr = Module._malloc(Module.lengthBytesUTF8(scope) + 1);
     Module.stringToUTF8(scope, keyScopePtr, Module.lengthBytesUTF8(scope) + 1);
-    let resultPtr = Module._spectre(
+    resultPtr = Module._spectre(
       namePtr,
       passPtr,
       sitePtr,

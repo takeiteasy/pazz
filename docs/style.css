@@ -239,3 +239,15 @@ li > .mini-list {
 #site-already-exists {
     display: none;
 }
+
+#password-box {
+    font-family: "Times New Roman";
+    font-size: 18px;
+    font-weight: bold;
+    width: max-content;
+    text-align: center;
+    border: 3px white dashed;
+    margin: 0 auto;
+    padding: 10px;
+    display: none;
+}
