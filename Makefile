@@ -45,4 +45,6 @@ all: web cli library
 clean:
 	rm -f $(DST) $(CLI_DST) $(LIB_DST)
 
-.PHONY: web clean cli library
+test: cli library clean web
+
+.PHONY: web clean cli library test

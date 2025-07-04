@@ -23,6 +23,25 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
+      console.log("Fallback: Copied to clipboard");
+    } catch (err) {
+      console.error("Fallback: Unable to copy", err);
+    }
+    document.body.removeChild(textArea);
+  }
+}
+
 function addUsername(username) {
   let usernames = getUsernames();
   if (!usernames.includes(username)) {
@@ -96,7 +115,7 @@ function updateUsernamesList() {
 
   var html = "<ul>";
   users.forEach((user) => {
-    html += `<li><button class="username">${user}</button><button class="remove-username mini-button mini-mini" data-username="${user}">x</button></li>`;
+    html += `<li><button class="mini-list username">${user}</button><button class="remove-username mini-button mini-mini" data-username="${user}">x</button></li>`;
   });
   html += "</ul>";
   body.innerHTML += html;
@@ -111,11 +130,18 @@ function updatePasswordsList() {
   } else {
     var html = "<ul>";
     sites.forEach((site) => {
-      html += `<li><button class="site">${site}</button><button class="remove-site mini-button mini-mini" data-site="${site}">x</button></li>`;
+      html += `<li><button class="mini-list site">${site}</button><button class="remove-site mini-button mini-mini" data-site="${site}">x</button></li>`;
     });
     html += "</ul>";
     body.innerHTML += html;
   }
+  document.querySelectorAll(".site").forEach((site) => {
+    site.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+      // TODO: Run password though spectre
+      copyToClipboard(site.textContent);
+    });
+  });
 }
 
 function moveToPasswords() {
@@ -126,6 +152,18 @@ function moveToPasswords() {
   document.getElementById("add-password-body").style.display = "none";
   document.getElementById("add-site-body").style.display = "block";
   updatePasswordsList();
+}
+
+function moveBackToUsername() {
+  if (State.username === undefined) {
+    return;
+  }
+  State.username = undefined;
+  State.password = undefined;
+  document.getElementById("add-username-body").style.display = "block";
+  document.getElementById("add-password-body").style.display = "none";
+  document.getElementById("add-site-body").style.display = "none";
+  updateUsernamesList();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -141,8 +179,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (username === "") {
         return;
       }
-      document.getElementById("username-already-exists").style.display =
-        hasUsername(username) ? "table" : "none";
+      var err = document.getElementById("username-already-exists");
+      if (hasUsername(username)) {
+        err.style.display = "table";
+        return;
+      }
+      err.style.display = "none";
       addUsername(username);
       updateUsernamesList();
     });
@@ -179,6 +221,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (site === "") {
       return;
     }
+    var err = document.getElementById("site-already-exists");
+    if (hasUserSite(State.username, site)) {
+      err.style.display = "table";
+      return;
+    }
+    err.style.display = "none";
+    addUserSite(State.username, site);
+    updatePasswordsList();
     console.log(site);
   });
 
@@ -192,6 +242,16 @@ document.addEventListener("DOMContentLoaded", function () {
       State.username = username;
       document.getElementById("add-username-body").style.display = "none";
       document.getElementById("add-password-body").style.display = "block";
+    } else if (e.target.classList.contains("remove-site")) {
+      const site = e.target.dataset.site;
+      removeUserSite(State.username, site);
+      updatePasswordsList();
+    } else if (e.target.classList.contains("site")) {
+      const site = e.target.textContent;
+      // TODO: Run password though spectre + show password
+      console.log(site);
+    } else if (e.target.classList.contains("return")) {
+      moveBackToUsername();
     }
   });
 });

@@ -5,11 +5,20 @@
 
 Totally offline, reproducible password generation + management. Passwords are not stored anywhere and can be reproduced anywhere.
 
-> [!NOTE]
-> Original algorithm taken from [spectre.app](https://spectre.app/spectre-algorithm.pdf) (formerly "Master Password")
+## Build
 
-> [!NOTE]
-> scrypt+sha256 implementation taken from [technion/libscrypt](https://github.com/technion/libscrypt)
+`TODO`
+
+## TODO
+
+- [ ] Remember user last user
+- [ ] Advanced password settings (type, scope, counter)
+- [ ] Import + export users
+
+## Acknowledgements
+
+- Based on [this](https://spectre.app/spectre-algorithm.pdf) paper by [spectre.app](https://spectre.app/) (formerly "Master Password")
+- scrypt+sha256 implementation taken from [technion/libscrypt](https://github.com/technion/libscrypt) (BSD-2-License)
 
 ## License
 ```
