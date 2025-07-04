@@ -38,9 +38,9 @@ typedef enum {
     TemplatePin     = 5,
     TemplateName    = 6,
     TemplatePhrase  = 7
-} spectre_template_t;
+} pazz_template_t;
 
-const char* spectre(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, spectre_template_t type);
+const char* spectre(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type);
 
 #ifdef __cplusplus
 }

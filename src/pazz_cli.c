@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
             ABORT("ERROR: Unknown scope \"%s\"", scope);
     }
 
-    spectre_template_t spectreTemplate = TemplateLong;
+    pazz_template_t spectreTemplate = TemplateLong;
     if (template) {
         const char *lower = lowercase(template);
         if (!strncmp("max", lower, 3) || !strncmp("maximum", lower, 7))

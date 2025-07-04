@@ -25,6 +25,8 @@
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
+#include "pazz.h"
+
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -656,17 +658,6 @@ err0:
 
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
-typedef enum {
-    TemplateMaximum,
-    TemplateLong,
-    TemplateMedium,
-    TemplateShort,
-    TemplateBasic,
-    TemplatePin,
-    TemplateName,
-    TemplatePhrase
-} pazz_template_t;
-
 static const char* Template(const pazz_template_t type, unsigned char seed) {
     switch (type) {
         default:
@@ -814,5 +805,6 @@ const char* spectre(const char *name, const char *pass, const char *site, const 
     char* const site_pass = malloc(sizeof(char) * template_sz + 1);
     for (int i = 0; i < template_sz; ++i)
         site_pass[i] = TemplateChar(template[i], site_key[i + 1]);
+    site_pass[template_sz] = '\0';
     return site_pass;
 }
