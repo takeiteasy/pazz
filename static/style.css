@@ -159,9 +159,12 @@ h1 {
 }
 
 .body {
-    position: absolute;
     margin-top: -15px;
     position: relative;
+}
+
+.body > h1 {
+    text-align: center;
 }
 
 #test {
@@ -170,10 +173,7 @@ h1 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    min-width: 400px;
-    max-width: 640px;
     min-height: 128px;
-    max-height: 480px;
 }
 
 li > .mini-list {
