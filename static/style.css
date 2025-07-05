@@ -49,6 +49,11 @@ h1 {
     font-family: "curtain_call";
 }
 
+a {
+    color: white;
+    font-weight: bold;
+}
+
 @keyframes scrollCheckerboard {
     0% {
         background-position: 100% -100%;
@@ -259,4 +264,22 @@ li > .mini-list {
 
 .advanced-password {
     display: none;
+}
+
+.footer {
+    display: block;
+    padding-top: 15px;
+    height: 15px;
+    width: 100%;
+    color: white;
+}
+
+#footer-right {
+    float: right;
+    text-align: right;
+}
+
+#footer-left {
+    float: left;
+    text-align: left;
 }

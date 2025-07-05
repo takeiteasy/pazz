@@ -85,20 +85,34 @@ function getUserSites(username) {
     : [];
 }
 
-function addUserSite(username, site) {
+function addUserSite(username, site, scope, counter, template) {
   let sites = getUserSites(username);
-  sites.push(site);
+  sites.push({
+    identifier: site,
+    scope: scope,
+    counter: counter,
+    template: template,
+  });
   localStorage.setItem(username, JSON.stringify(sites));
 }
 
 function removeUserSite(username, site) {
   let sites = getUserSites(username);
-  sites = sites.filter((s) => s !== site);
+  sites = sites.filter((s) => s.identifier !== site);
   localStorage.setItem(username, JSON.stringify(sites));
 }
 
 function hasUserSite(username, site) {
-  return getUserSites(username).includes(site);
+  var sites = getUserSites(username);
+  var result = false;
+  sites.every((s) => {
+    if (s.identifier === site) {
+      result = true;
+      return true;
+    }
+    return false;
+  });
+  return result;
 }
 
 function setLastUser(username) {
@@ -152,18 +166,34 @@ function updatePasswordsList() {
     var html = "<ul>";
     sites.forEach((site) => {
       var selected =
-        State.site != undefined && site === State.site ? "selected" : "";
-      html += `<li><button class="mini-list site ${selected}">${site}</button><button class="remove-site mini-button mini-mini" data-site="${site}">x</button></li>`;
+        State.site != undefined && site.identifier === State.site
+          ? "selected"
+          : "";
+      html += `<li><button class="mini-list site ${selected}">${site.identifier}</button><button class="remove-site mini-button mini-mini" data-site="${site.identifier}">x</button></li>`;
     });
     html += "</ul>";
     body.innerHTML += html;
   }
-  document.querySelectorAll(".site").forEach((site) => {
-    site.addEventListener("contextmenu", function (e) {
+  document.querySelectorAll(".site").forEach((btn) => {
+    btn.addEventListener("contextmenu", function (e) {
       e.preventDefault();
-      copyToClipboard(
-        spectre(State.username, State.password, site.textContent),
-      );
+      const sites = getUserSites(State.username);
+      sites.every((site) => {
+        if (site.identifier === btn.textContent) {
+          copyToClipboard(
+            spectre(
+              State.username,
+              State.password,
+              site.identifier,
+              site.counter,
+              site.scope,
+              site.template,
+            ),
+          );
+          return false;
+        }
+        return true;
+      });
     });
   });
 }
@@ -206,6 +236,250 @@ function showAdvanced() {
   txt.innerText = State.showAdvanced ? "Hide Advanced" : "Show Advanced";
 }
 
+class FileReader {
+  static async openJsonFile() {
+    if ("showOpenFilePicker" in window) {
+      try {
+        return await this.openWithDialog();
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.warn("File System Access API failed, falling back to input");
+          return await this.openWithInput();
+        }
+        return null;
+      }
+    } else {
+      return await this.openWithInput();
+    }
+  }
+
+  static async openWithDialog() {
+    const [fileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "JSON files",
+          accept: { "application/json": [".json"] },
+        },
+      ],
+      multiple: false,
+    });
+    const file = await fileHandle.getFile();
+    const content = await file.text();
+    let jsonData;
+    try {
+      jsonData = JSON.parse(content);
+    } catch (parseError) {
+      throw new Error(`Invalid JSON file: ${parseError.message}`);
+    }
+    return { file, content, jsonData, fileHandle };
+  }
+
+  static openWithInput() {
+    return new Promise((resolve, reject) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json,application/json";
+
+      input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          resolve(null);
+          return;
+        }
+
+        // Additional validation for file extension
+        if (!file.name.toLowerCase().endsWith(".json")) {
+          reject(new Error("Please select a JSON file"));
+          return;
+        }
+
+        try {
+          const content = await file.text();
+          const jsonData = JSON.parse(content);
+
+          resolve({ file, content, jsonData });
+        } catch (error) {
+          if (error instanceof SyntaxError) {
+            reject(new Error(`Invalid JSON file: ${error.message}`));
+          } else {
+            reject(error);
+          }
+        }
+      };
+
+      input.oncancel = () => resolve(null);
+      input.click();
+    });
+  }
+}
+
+async function importUsers() {
+  const result = await FileReader.openJsonFile();
+  if (!result) {
+    return;
+  }
+  var data = JSON.parse(result.content);
+  if (State.password === undefined) {
+    if (data !== "object") {
+      alert("Invalid JSON data, expected object");
+      return;
+    }
+    for (var key in data) {
+      if (addUsername(key)) {
+        var value = data[key];
+        var identifier = value.identifier;
+        var scope = value.scope;
+        var counter = value.counter;
+        var template = value.template;
+        if (!identifier || !scope || !counter || !template) {
+          continue;
+        }
+        addUserSite(
+          key,
+          value.identifier,
+          value.scope,
+          value.counter,
+          value.template,
+        );
+      }
+    }
+  } else {
+    if (!data.isArray()) {
+      alert("Invalid JSON data, expected array");
+      return;
+    }
+    for (var value in data) {
+      var identifier = value.identifier;
+      var scope = value.scope;
+      var counter = value.counter;
+      var template = value.template;
+      if (!identifier || !scope || !counter || !template) {
+        continue;
+      }
+      addUserSite(
+        State.username,
+        value.identifier,
+        value.scope,
+        value.counter,
+        value.template,
+      );
+    }
+  }
+}
+
+class FileSaver {
+  static async saveFile(content, filename, contentType = "text/plain") {
+    if ("showSaveFilePicker" in window) {
+      try {
+        return await this.saveWithDialog(content, filename, contentType);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.warn(
+            "File System Access API failed, falling back to download",
+          );
+        }
+        return this.saveWithBlob(content, filename, contentType);
+      }
+    } else {
+      return this.saveWithBlob(content, filename, contentType);
+    }
+  }
+
+  static async saveWithDialog(content, filename, contentType) {
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [
+        {
+          description: "Files",
+          accept: { [contentType]: [`.${filename.split(".").pop()}`] },
+        },
+      ],
+    });
+
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+
+    return true;
+  }
+
+  static saveWithBlob(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+    return true;
+  }
+}
+
+function exportUsers() {
+  if (State.password === undefined) {
+    var users = getUsernames();
+    if (users.length === 0) {
+      alert("Nothing to export...");
+      return;
+    }
+    var result = {};
+    users.forEach((user) => {
+      result[user] = getUserSites(user);
+    });
+    FileSaver.saveFile(JSON.stringify(result), "pazz.json");
+  } else {
+    var sites = getUserSites(State.username);
+    if (sites.length === 0) {
+      alert("Nothing to export...");
+      return;
+    }
+    var result = [];
+    sites.forEach((site) => {
+      result.push(site);
+    });
+    FileSaver.saveFile(JSON.stringify(result), `pazz_${State.username}.json`);
+  }
+}
+
+function clearUsers() {
+  if (State.password != undefined) {
+    var sites = getUserSites(State.username);
+    if (sites.length === 0) {
+      return;
+    }
+    if (!confirm(`Do you want to remove all ${sites.length} site(s)?`)) {
+      return;
+    }
+    sites.forEach((site) => {
+      removeUserSite(State.username, site.identifier);
+    });
+    updatePasswordsList();
+  } else {
+    var users = getUsernames();
+    if (users.length === 0) {
+      return;
+    }
+    var sites_count = 0;
+    users.forEach((user) => {
+      sites_count += getUserSites(user).length;
+    });
+    if (
+      !confirm(
+        `Are you sure you want to clear all users? There are ${users.length} user(s) and ${sites_count} site(s).`,
+      )
+    ) {
+      return;
+    }
+    localStorage.clear();
+    updateUsernamesList();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   if (hasLastUser()) {
     var last_user = getLastUser();
@@ -214,7 +488,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("add-password-body").style.display = "block";
   } else {
     var users = getUsernames();
-    console.log(users);
     if (users.length === 1) {
       State.username = users[0];
       document.getElementById("add-username-body").style.display = "none";
@@ -289,7 +562,12 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("password-box").style.display = "none";
     err.style.display = "none";
     // Get + store values for scope, counter + template
-    addUserSite(State.username, site);
+    const scope = document.getElementById("scope-input").value.trim();
+    const counter = parseInt(document.getElementById("counter-input").value);
+    const template = parseInt(
+      document.getElementById("template-input").value.trim(),
+    );
+    addUserSite(State.username, site, scope, counter, template);
     State.site = undefined;
     updatePasswordsList();
   });
@@ -337,9 +615,23 @@ document.addEventListener("DOMContentLoaded", function () {
         box.style.display = "none";
         box.innerHTML = "";
       } else {
-        box.style.display = "block";
-        box.innerHTML = spectre(State.username, State.password, site);
-        State.site = site;
+        const sites = getUserSites(State.username);
+        sites.every((_site) => {
+          if (_site.identifier === site) {
+            box.innerHTML = spectre(
+              State.username,
+              State.password,
+              _site.identifier,
+              _site.counter,
+              _site.scope,
+              _site.template,
+            );
+            box.style.display = "block";
+            State.site = site;
+            return false;
+          }
+          return true;
+        });
       }
       updatePasswordsList();
     } else if (e.target.classList.contains("return")) {
