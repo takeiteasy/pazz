@@ -23,6 +23,13 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
+var State = {
+  username: undefined,
+  password: undefined,
+  site: undefined,
+  showAdvanced: false,
+};
+
 function copyToClipboard(text) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text);
@@ -111,12 +118,6 @@ function hasLastUser() {
   return getLastUser() !== null;
 }
 
-var State = {
-  username: undefined,
-  password: undefined,
-  site: undefined,
-};
-
 function updateUsernamesList() {
   var body = document.getElementById("inner-body");
   body.innerHTML = "";
@@ -193,6 +194,16 @@ function moveBackToUsername() {
   State.password = undefined;
   State.site = undefined;
   updateUsernamesList();
+}
+
+function showAdvanced() {
+  var elems = document.getElementsByClassName("advanced-password");
+  State.showAdvanced = !State.showAdvanced;
+  for (var i = 0; i < elems.length; i++) {
+    elems[i].style.display = State.showAdvanced ? "block" : "none";
+  }
+  var txt = document.getElementById("toggle-advanced");
+  txt.innerText = State.showAdvanced ? "Hide Advanced" : "Show Advanced";
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -277,6 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     document.getElementById("password-box").style.display = "none";
     err.style.display = "none";
+    // Get + store values for scope, counter + template
     addUserSite(State.username, site);
     State.site = undefined;
     updatePasswordsList();

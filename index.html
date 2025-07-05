@@ -108,8 +108,8 @@
                     <div id="add-site-body">
                         <div id="password-box"></div>
                         <table style="margin: 0 auto; padding-top: 10px">
-                            <tr>
-                                <form id="add-site">
+                            <form id="add-site">
+                                <tr>
                                     <td>
                                         <input
                                             type="text"
@@ -128,17 +128,73 @@
                                             +
                                         </button>
                                     </td>
-                                </form>
-                            </tr>
+                                </tr>
+                                <tr class="advanced-password">
+                                    <td colspan="2">
+                                        <label for="scope-input">Scope:</label>
+                                        <input
+                                            type="text"
+                                            class="mini-input"
+                                            value="com.lyndir.masterpassword"
+                                            id="scope-input"
+                                        />
+                                    </td>
+                                </tr>
+                                <tr class="advanced-password">
+                                    <td colspan="2">
+                                        <label for="counter-input"
+                                            >Counter:</label
+                                        >
+                                        <input
+                                            type="number"
+                                            step="1"
+                                            class="mini-input"
+                                            value="0"
+                                            id="counter-input"
+                                        />
+                                    </td>
+                                </tr>
+                                <tr class="advanced-password">
+                                    <td colspan="2">
+                                        <label for="template-input"
+                                            >Template:</label
+                                        >
+                                        <select
+                                            class="mini-input"
+                                            id="template-input"
+                                        >
+                                            <option value="0">Maximum</option>
+                                            <option value="1" selected>
+                                                Long
+                                            </option>
+                                            <option value="2">Medium</option>
+                                            <option value="3">Short</option>
+                                            <option value="4">Basic</option>
+                                            <option value="5">Pin</option>
+                                            <option value="6">Name</option>
+                                            <option value="7">Phrase</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </form>
                             <tr id="site-already-exists">
                                 <td colspan="2">
-                                    <span style="color: red"
-                                        >This site already exists!</span
-                                    >
+                                    <span style="color: red">
+                                        This site already exists!
+                                    </span>
                                 </td>
                             </tr>
                             <tr>
-                                <td colspan="2" align="right">
+                                <td align="left">
+                                    <a
+                                        href="javascript:void(0)"
+                                        onclick="showAdvanced()"
+                                        id="toggle-advanced"
+                                    >
+                                        Show advanced...
+                                    </a>
+                                </td>
+                                <td align="right">
                                     <button
                                         class="mini-button mini-mini return"
                                     >

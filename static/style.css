@@ -256,3 +256,7 @@ li > .mini-list {
     background-color: white !important;
     color: black !important;
 }
+
+.advanced-password {
+    display: none;
+}
