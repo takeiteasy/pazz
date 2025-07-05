@@ -201,6 +201,14 @@ document.addEventListener("DOMContentLoaded", function () {
     State.username = last_user;
     document.getElementById("add-username-body").style.display = "none";
     document.getElementById("add-password-body").style.display = "block";
+  } else {
+    var users = getUsernames();
+    console.log(users);
+    if (users.length === 1) {
+      State.username = users[0];
+      document.getElementById("add-username-body").style.display = "none";
+      document.getElementById("add-password-body").style.display = "block";
+    }
   }
   updateUsernamesList();
 
