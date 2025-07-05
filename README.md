@@ -11,9 +11,10 @@ Totally offline, reproducible password generation + management. Passwords are no
 
 ## TODO
 
-- [ ] Remember user last user
+- [ ] Store last user
 - [ ] Advanced password settings (type, scope, counter)
 - [ ] Import + export users
+- [ ] Confirmation messages when deleting
 
 ## Acknowledgements
 
