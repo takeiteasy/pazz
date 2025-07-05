@@ -40,6 +40,7 @@ typedef enum {
     TemplatePhrase  = 7
 } pazz_template_t;
 
+// WARNING: Returned value must be freed
 const char* spectre(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type);
 
 #ifdef __cplusplus

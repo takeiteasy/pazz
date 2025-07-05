@@ -658,7 +658,7 @@ err0:
 
 #define RETURN_TEMPLATE(N, ...) return (const char*[(N)]){ __VA_ARGS__ }[seed % (N)]
 
-static const char* Template(const pazz_template_t type, unsigned char seed) {
+static const char* _template_pattern(const pazz_template_t type, unsigned char seed) {
     switch (type) {
         default:
         case TemplateMaximum:
@@ -686,7 +686,7 @@ static const char* Template(const pazz_template_t type, unsigned char seed) {
     }
 }
 
-static const char *TemplateCharacters(const char c) {
+static const char* _template_string(const char c) {
     switch (c) {
         case 'V':
             return "AEIOU";
@@ -713,12 +713,7 @@ static const char *TemplateCharacters(const char c) {
     }
 }
 
-static const char TemplateChar(const char c, const unsigned char seed) {
-    const char *ch = TemplateCharacters(c);
-    return ch ? ch[seed % strlen(ch)] : '\0';
-}
-
-static int ResizeBuffer(const void **buf, size_t *buf_sz, const size_t delta_sz) {
+static int _resize(const void **buf, size_t *buf_sz, const size_t delta_sz) {
     if (!buf)
         return 0;
 
@@ -733,66 +728,54 @@ static int ResizeBuffer(const void **buf, size_t *buf_sz, const size_t delta_sz)
     return 1;
 }
 
-static void ZeroBuffer(void *buf, size_t buf_sz) {
-    uint8_t *b = buf;
-    for (; buf_sz > 0; --buf_sz)
-        *b++ = 0;
+static void _release(void **buf) {
+    if (buf && *buf) {
+        free(*buf);
+        *buf = NULL;
+    }
 }
 
-static int BufferDelete(void **buf, const size_t buf_sz) {
-    if (!buf || !*buf)
-        return 0;
-
-    ZeroBuffer(*buf, buf_sz);
-    free(*buf);
-    *buf = NULL;
-
-    return 1;
-}
-
-static int BufferPush(unsigned char **buf, size_t *buf_sz, const void *data, const size_t data_sz) {
+static int _append(unsigned char **buf, size_t *buf_sz, const void *data, const size_t data_sz) {
     if (!buf || !buf_sz || !data || !data_sz)
         return 0;
-
-    if (!ResizeBuffer((void*)buf, buf_sz, data_sz)) {
-        BufferDelete((void*)buf, *buf_sz);
+    if (!_resize((void*)buf, buf_sz, data_sz)) {
+        _release((void*)buf);
         return 0;
     }
-
     unsigned char *buf_offset = *buf + *buf_sz - data_sz;
     memcpy(buf_offset, data, data_sz);
     return 1;
 }
 
-#define BufferPushString(A, B, C) BufferPush((A), (B), (C), strlen((C)))
+#define _append_string(BUF, BUF_SZ, STR) _append(BUF, BUF_SZ, STR, strlen(STR))
 
-static int BufferPushInt(uint8_t **buf, size_t *buf_sz, const uint32_t data) {
-    uint8_t tmp[4] = {
-        (unsigned char)((data >> 24) & UINT8_MAX),
-        (unsigned char)((data >> 16) & UINT8_MAX),
-        (unsigned char)((data >> 8L) & UINT8_MAX),
-        (unsigned char)((data >> 0L) & UINT8_MAX)
-    };
-    return BufferPush(buf, buf_sz, &tmp, sizeof(tmp));
-}
+#define _append_int(BUF, BUF_SZ, INT) \
+    do { \
+        uint8_t tmp[4] = { \
+            (unsigned char)(((INT) >> 24) & UINT8_MAX), \
+            (unsigned char)(((INT) >> 16) & UINT8_MAX), \
+            (unsigned char)(((INT) >> 8L) & UINT8_MAX), \
+            (unsigned char)(((INT) >> 0L) & UINT8_MAX) \
+        }; \
+        _append(BUF, BUF_SZ, &tmp, sizeof(tmp)); \
+    } while(0)
 
 const char* spectre(const char *name, const char *pass, const char *site, const int site_counter, const char *key_scope, pazz_template_t type) {
     unsigned char *pw_salt = NULL;
     size_t pw_salt_sz = 0;
-    BufferPushString(&pw_salt, &pw_salt_sz, key_scope);
-    BufferPushInt(&pw_salt, &pw_salt_sz, (unsigned int)strlen(name));
-    BufferPushString(&pw_salt, &pw_salt_sz, name);
+    _append_string(&pw_salt, &pw_salt_sz, key_scope);
+    _append_int(&pw_salt, &pw_salt_sz, (unsigned int)strlen(name));
+    _append_string(&pw_salt, &pw_salt_sz, name);
 
     unsigned char pass_key[64];
     libscrypt_scrypt((unsigned char*)pass, strlen(pass), pw_salt, pw_salt_sz, PW_N, PW_r, PW_p, pass_key, 64);
-    BufferDelete((void*)&pw_salt, pw_salt_sz);
 
     size_t site_salt_sz = 0;
     unsigned char *site_salt = NULL;
-    BufferPushString(&site_salt, &site_salt_sz, key_scope);
-    BufferPushInt(&site_salt, &site_salt_sz, (unsigned int)strlen(site));
-    BufferPushString(&site_salt, &site_salt_sz, site);
-    BufferPushInt(&site_salt, &site_salt_sz, site_counter);
+    _append_string(&site_salt, &site_salt_sz, key_scope);
+    _append_int(&site_salt, &site_salt_sz, (unsigned int)strlen(site));
+    _append_string(&site_salt, &site_salt_sz, site);
+    _append_int(&site_salt, &site_salt_sz, site_counter);
 
     unsigned char site_key[32];
     HMAC_SHA256_CTX ctx;
@@ -800,11 +783,16 @@ const char* spectre(const char *name, const char *pass, const char *site, const 
     libscrypt_HMAC_SHA256_Update(&ctx, site_salt, site_salt_sz);
     libscrypt_HMAC_SHA256_Final(site_key, &ctx);
 
-    const char* template = Template(type, site_key[0]);
+    _release((void*)&pw_salt);
+    _release((void*)&site_salt);
+
+    const char* template = _template_pattern(type, site_key[0]);
     size_t template_sz = strlen(template);
-    char* const site_pass = malloc(sizeof(char) * template_sz + 1);
-    for (int i = 0; i < template_sz; ++i)
-        site_pass[i] = TemplateChar(template[i], site_key[i + 1]);
-    site_pass[template_sz] = '\0';
-    return site_pass;
+    char* const result = malloc(sizeof(char) * template_sz + 1);
+    for (int i = 0; i < template_sz; ++i) {
+        const char *src = _template_string(template[i]);
+        result[i] = src[site_key[i + 1] % strlen(src)];
+    }
+    result[template_sz] = '\0';
+    return result;
 }

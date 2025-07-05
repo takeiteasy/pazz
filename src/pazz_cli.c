@@ -29,8 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
-#define __PLATFORM_WINDOWS
+#ifdef _WIN32
 #include "getopt_win32.h"
 #include <conio.h>
 #else
@@ -106,8 +105,8 @@ static const char* lowercase(const char *str) {
         }                              \
     } while(0)
 
-#if !defined(__PLATFORM_WINDOWS)
-static void SetEcho(int fd, int enabled) {
+#if !defined(_WIN32)
+static void echo(int fd, int enabled) {
     struct termios old = {0};
     tcgetattr(fd, &old);
     if (!enabled)
@@ -175,32 +174,33 @@ int main(int argc, char *argv[]) {
             ABORT("ERROR: Unknown scope \"%s\"", scope);
     }
 
-    pazz_template_t spectreTemplate = TemplateLong;
+    pazz_template_t spectre_template = TemplateLong;
     if (template) {
         const char *lower = lowercase(template);
         if (!strncmp("max", lower, 3) || !strncmp("maximum", lower, 7))
-            spectreTemplate = TemplateMaximum;
+            spectre_template = TemplateMaximum;
         else if (!strncmp("long", lower, 4))
-            spectreTemplate = TemplateLong;
+            spectre_template = TemplateLong;
         else if (!strncmp("medium", lower, 6))
-            spectreTemplate = TemplateMedium;
+            spectre_template = TemplateMedium;
         else if (!strncmp("short", lower, 5))
-            spectreTemplate = TemplateShort;
+            spectre_template = TemplateShort;
         else if (!strncmp("pin", lower, 3))
-            spectreTemplate = TemplatePin;
+            spectre_template = TemplatePin;
         else if (!strncmp("name", lower, 4))
-            spectreTemplate = TemplateName;
+            spectre_template = TemplateName;
         else if (!strncmp("phrase", lower, 6))
-            spectreTemplate = TemplatePhrase;
+            spectre_template = TemplatePhrase;
         else
             ABORT("ERROR: Unknown template \"%s\"", template);
     }
 
     char input[256];
     if (!password) {
-#if defined(__PLATFORM_WINDOWS)
+#if defined(_WIN32)
         int i = 0;
         for (;;) {
+            // TODO: Bounds check + backspace
             char ch = _getch();
             if (ch == '\r') {
                 input[i] = '\0';
@@ -209,14 +209,14 @@ int main(int argc, char *argv[]) {
                 input[i++] = ch;
         }
 #else
-        SetEcho(STDIN_FILENO, 0);
+        echo(STDIN_FILENO, 0);
         fgets(input, sizeof(input), stdin);
-        SetEcho(STDIN_FILENO, 1);
+        echo(STDIN_FILENO, 1);
         input[strcspn(input, "\n")] = 0;
 #endif
         password = input;
     }
 
-    printf("%s", spectre(name, password, site, counter, scope, spectreTemplate));
+    printf("%s", spectre(name, password, site, counter, scope, spectre_template));
     return 0;
 }
