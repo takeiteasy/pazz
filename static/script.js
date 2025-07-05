@@ -94,9 +94,27 @@ function hasUserSite(username, site) {
   return getUserSites(username).includes(site);
 }
 
+function setLastUser(username) {
+  localStorage.setItem("lastUser", username);
+}
+
+function getLastUser() {
+  var last_user = localStorage.getItem("lastUser");
+  if (!hasUsername(last_user)) {
+    localStorage.removeItem("lastUser");
+    return null;
+  }
+  return last_user;
+}
+
+function hasLastUser() {
+  return getLastUser() !== null;
+}
+
 var State = {
   username: undefined,
   password: undefined,
+  site: undefined,
 };
 
 function updateUsernamesList() {
@@ -115,7 +133,9 @@ function updateUsernamesList() {
 
   var html = "<ul>";
   users.forEach((user) => {
-    html += `<li><button class="mini-list username">${user}</button><button class="remove-username mini-button mini-mini" data-username="${user}">x</button></li>`;
+    var selected =
+      State.username != undefined && user === State.username ? "selected" : "";
+    html += `<li><button class="mini-list username ${selected}">${user}</button><button class="remove-username mini-button mini-mini" data-username="${user}">x</button></li>`;
   });
   html += "</ul>";
   body.innerHTML += html;
@@ -130,7 +150,9 @@ function updatePasswordsList() {
   } else {
     var html = "<ul>";
     sites.forEach((site) => {
-      html += `<li><button class="mini-list site">${site}</button><button class="remove-site mini-button mini-mini" data-site="${site}">x</button></li>`;
+      var selected =
+        State.site != undefined && site === State.site ? "selected" : "";
+      html += `<li><button class="mini-list site ${selected}">${site}</button><button class="remove-site mini-button mini-mini" data-site="${site}">x</button></li>`;
     });
     html += "</ul>";
     body.innerHTML += html;
@@ -167,10 +189,19 @@ function moveBackToUsername() {
   var box = document.getElementById("password-box");
   box.style.display = "none";
   box.innerHTML = "";
+  State.username = undefined;
+  State.password = undefined;
+  State.site = undefined;
   updateUsernamesList();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  if (hasLastUser()) {
+    var last_user = getLastUser();
+    State.username = last_user;
+    document.getElementById("add-username-body").style.display = "none";
+    document.getElementById("add-password-body").style.display = "block";
+  }
   updateUsernamesList();
 
   document
@@ -190,7 +221,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       err.style.display = "none";
       addUsername(username);
+      State.username = username;
       updateUsernamesList();
+      document.getElementById("add-username-body").style.display = "none";
+      document.getElementById("add-password-body").style.display = "block";
     });
 
   document
@@ -203,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (State.username === undefined || password === "") {
         return;
       }
+      setLastUser(State.username);
       State.password = password;
       document.getElementById("add-username-body").style.display = "block";
       document.getElementById("add-password-body").style.display = "none";
@@ -215,6 +250,8 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       document.getElementById("add-username-body").style.display = "block";
       document.getElementById("add-password-body").style.display = "none";
+      State.username = undefined;
+      updateUsernamesList();
     });
 
   document.getElementById("add-site").addEventListener("submit", function (e) {
@@ -233,31 +270,60 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("password-box").style.display = "none";
     err.style.display = "none";
     addUserSite(State.username, site);
+    State.site = undefined;
     updatePasswordsList();
-    console.log(site);
   });
 
   document.addEventListener("click", function (e) {
     if (e.target.classList.contains("remove-username")) {
       const username = e.target.dataset.username;
+      var sites = getUserSites(username);
+      var extra =
+        sites.length > 0 ? ` and all their sites (${sites.length})` : "";
+      if (!confirm(`Do you want to remove user "${username}"${extra}?`)) {
+        return;
+      }
       removeUsername(username);
+      State.username = undefined;
       updateUsernamesList();
+      document.getElementById("add-username-body").style.display = "block";
+      document.getElementById("add-password-body").style.display = "none";
     } else if (e.target.classList.contains("username")) {
       const username = e.target.textContent;
-      State.username = username;
-      document.getElementById("add-username-body").style.display = "none";
-      document.getElementById("add-password-body").style.display = "block";
+      if (State.username === username) {
+        State.username = undefined;
+        document.getElementById("add-username-body").style.display = "block";
+        document.getElementById("add-password-body").style.display = "none";
+      } else {
+        State.username = username;
+        document.getElementById("add-username-body").style.display = "none";
+        document.getElementById("add-password-body").style.display = "block";
+      }
+      updateUsernamesList();
     } else if (e.target.classList.contains("remove-site")) {
       const site = e.target.dataset.site;
+      if (!confirm(`Do you want to remove site "${site}"?`)) {
+        return;
+      }
       document.getElementById("password-box").style.display = "none";
       removeUserSite(State.username, site);
+      State.site = undefined;
       updatePasswordsList();
     } else if (e.target.classList.contains("site")) {
       const site = e.target.textContent;
       var box = document.getElementById("password-box");
-      box.style.display = "block";
-      box.innerHTML = spectre(State.username, State.password, site);
+      if (State.site === site) {
+        State.site = undefined;
+        box.style.display = "none";
+        box.innerHTML = "";
+      } else {
+        box.style.display = "block";
+        box.innerHTML = spectre(State.username, State.password, site);
+        State.site = site;
+      }
+      updatePasswordsList();
     } else if (e.target.classList.contains("return")) {
+      State.site = undefined;
       moveBackToUsername();
     }
   });
