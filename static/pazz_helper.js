@@ -1,4 +1,4 @@
-/* pazz_helper.js -- https://github.com/takeiteasy/pazz
+/* pazz_helper.js -- https://git.sr.ht/~takeiteasy/pazz
 
 The MIT License (MIT)
 

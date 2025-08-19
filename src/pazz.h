@@ -1,4 +1,4 @@
-/* pazz.h -- https://github.com/takeiteasy/pazz
+/* pazz.h -- https://git.sr.ht/~takeiteasy/pazz
 
  The MIT License (MIT)
 

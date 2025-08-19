@@ -1,4 +1,4 @@
-/* pazz.c -- https://github.com/takeiteasy/pazz
+/* pazz.c -- https://git.sr.ht/~takeiteasy/pazz
 
  scrypt + sha256 implementation taken from -- https://github.com/technion/libscrypt
 

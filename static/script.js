@@ -1,4 +1,4 @@
-/* script.js -- https://github.com/takeiteasy/pazz
+/* script.js -- https://git.sr.ht/~takeiteasy/pazz
 
 The MIT License (MIT)
 
