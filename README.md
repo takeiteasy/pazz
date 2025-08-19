@@ -1,10 +1,10 @@
-# pazz
+# pazz 
 
 Totally offline, reproducible password generation + management. Passwords are not stored anywhere and can be reproduced anywhere.
 
 You can use pazz at [takeiteasy.github.io/pazz](https://takeiteasy.github.io/pazz/). Or you can simple clone this repo or download the [zip file](https://github.com/takeiteasy/pazz/archive/refs/heads/master.zip). Simply open index.html in your browser and you're good to go.
 
-If you're paranoid, or interested in the cli tool, please see the [build](#build) section.
+If you're paranoid, or interested in using pazz as a library, please see the [build](#build) section.
 
 ## Usage
 
@@ -43,17 +43,17 @@ Now when you left click on the site identifier you will be presented with a gene
 If you want to build pazz yourself you can run the following commands:
 
 ```bash
-# make javascript, cli program and library
-make all
-# make javascript
+# generate javascript
 make web
-# make cli program
-make cli
-# make library
+# dynamic library
 make library
+# do both
+make all
 ```
 
- To build the javascript library you will need emscripten installed. The cli program and library just need a C compiler.
+If you'd like to use pazz as a C library, simply include `pazz.c` and `pazz.h` in your project. The only requirement is the C standard library.
+
+If you'd like to use the javascript library, include `pazz.js` in your project. See [pazz_helper.js](https://github.com/takeiteasy/pazz/blob/master/static/pazz_helper.js) as well for a wrapper over the generated javascript function.
 
 ## TODO
 
