@@ -14,8 +14,6 @@ endif
 EMCC := `which emcc`
 DST := static/pazz.js
 SRC := src/pazz.c
-CLI_SRC := src/pazz_cli.c $(SRC)
-CLI_DST := pazz$(PROGEXT)
 LIB_DST := libpazz$(LIBEXT)
 
 default: $(DST)
@@ -30,21 +28,16 @@ $(DST): $(SRC)
 
 web: $(DST)
 
-$(CLI_DST): $(CLI_SRC)
-	$(CC) -Isrc $(CLI_SRC) -o $(CLI_DST)
-
-cli: $(CLI_DST)
-
 $(LIB_DST): $(SRC)
 	$(CC) -shared -fpic $(SRC) -o $(LIB_DST)
 
 library: $(LIB_DST)
 
-all: web cli library
+all: web library
 
 clean:
-	rm -f $(DST) $(CLI_DST) $(LIB_DST)
+	rm -f $(DST) $(LIB_DST)
 
-test: cli library clean web
+test: library clean web
 
-.PHONY: web clean cli library test
+.PHONY: web clean library test

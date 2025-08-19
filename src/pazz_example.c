@@ -1,4 +1,4 @@
-/* pazz_cli.c -- https://github.com/takeiteasy/pazz
+/* pazz_example.c -- https://github.com/takeiteasy/pazz
 
  The MIT License (MIT)
 
