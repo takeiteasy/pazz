@@ -1,4 +1,6 @@
-# pazz 
+# pazz
+
+### Project has moved to [https://git.sr.ht/~takeiteasy/pazz](https://git.sr.ht/~takeiteasy/pazz)
 
 Totally offline, reproducible password generation + management. Passwords are not stored anywhere and can be reproduced anywhere.
 
