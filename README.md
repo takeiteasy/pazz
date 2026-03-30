@@ -1,5 +1,7 @@
 # pazz 
 
+## Moved to [git.sr.ht/~takeiteasy/pazz](https://git.sr.ht/~takeiteasy/pazz)
+
 Totally offline, reproducible password generation + management. Passwords are not stored anywhere and can be reproduced anywhere.
 
 You can use pazz at [takeiteasy.github.io/pazz](https://takeiteasy.github.io/pazz/). Or you can simple clone this repo or download the [zip file](https://github.com/takeiteasy/pazz/archive/refs/heads/master.zip). Simply open index.html in your browser and you're good to go.
